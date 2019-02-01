@@ -43,7 +43,7 @@ Innovus and Synopsys PrimeTime:
    which contains parasitic resistance/capacitance information about all
    nets in the design, and a `.gds` file which contains the final layout.
    The `.gds` file can be inspected using the open-source Klayout GDS
-   viewer. Synopsys Innovus also generates reports which can be used to
+   viewer. Cadence Innovus also generates reports which can be used to
    accurately characterize area and timing.
 
  - We use Synopsys PrimeTime (PT) to perform power-analysis of our
@@ -481,6 +481,10 @@ If you want you can open up the final layout using Klayout.
 Choose _Display > Full Hierarchy_ from the menu to display the entire
 design. Zoom in and out to see the individual transistors as well as the
 entire chip.
+
+*To Do On Your Own:* Go through the ASIC flow front- and back-end again
+but with a much more aggressive clock period. Try seeing the results when
+you use a target clock period of only 300ps.
 
 Automating the ASIC Flow
 --------------------------------------------------------------------------
