@@ -482,10 +482,6 @@ Choose _Display > Full Hierarchy_ from the menu to display the entire
 design. Zoom in and out to see the individual transistors as well as the
 entire chip.
 
-*To Do On Your Own:* Go through the ASIC flow front- and back-end again
-but with a much more aggressive clock period. Try seeing the results when
-you use a target clock period of only 300ps.
-
 Automating the ASIC Flow
 --------------------------------------------------------------------------
 
@@ -546,4 +542,12 @@ You can use the `debug-` targets to view the final design in Cadence
 Innovus.
 
     % make debug-signoff
+
+*To Do On Your Own:* Modify the `setup-design.mk` file to target a much
+more aggressive clock period of only 300ps. Use the automated ASIC flow
+to push the four-stage registered incrementer through the flow again.
+Then use `debug-signoff` to bring the final deisgn up in Cadence Innovus.
+Explore the design to see how the tool has placed and routed the more
+complex incrementers. Use the `report_timing` and `report_area` commands
+to look at the critical path and area.
 
