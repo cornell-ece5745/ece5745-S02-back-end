@@ -29,10 +29,11 @@ class RegIncrPRTL( Model ):
       else:
         s.reg_out.next = s.in_
 
-    # ''' SECTION TASK '''''''''''''''''''''''''''''''''''''''''''''''''''
-    # This model is incomplete. As part of the section you will insert a
-    # combinational concurrent block here to model the incrementer logic.
-    # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    # Combinational logic
+
+    @s.combinational
+    def block2():
+      s.out.value = s.reg_out + 1
 
   def line_trace( s ):
     return "{} ({}) {}".format( s.in_, s.reg_out, s.out )

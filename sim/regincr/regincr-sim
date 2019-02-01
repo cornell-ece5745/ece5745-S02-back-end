@@ -19,15 +19,7 @@ input_values.extend( [0]*6 )
 
 model = RegIncrNstageRTL( nstages=4 )
 model.vcd_file = "regincr-4stage-sim.vcd"
-
-# ''' SECTION TASK '''''''''''''''''''''''''''''''''''''''''''''''''''''''
-# To translate the model to Verilog you need to add a line here like
-# this:
-#
-#  model = TranslationTool( model )
-#
-# ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-
+model = TranslationTool( model )
 model.elaborate()
 sim = SimulationTool( model )
 

@@ -23,8 +23,12 @@ def test_small( dump_vcd, test_verilog ):
 # test_large
 #-------------------------------------------------------------------------
 
-# ''' SECTION TASK '''''''''''''''''''''''''''''''''''''''''''''''''''''''
-# This test script is incomplete. As part of the section you will
-# insert add a new test case for larger inputs.
-# ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+def test_large( dump_vcd, test_verilog ):
+  run_test_vector_sim( RegIncrRTL(), [
+    ('in_   out*'),
+    [ 0xa0, '?'  ],
+    [ 0xb3, 0xa1 ],
+    [ 0xc6, 0xb4 ],
+    [ 0x00, 0xc7 ],
+  ], dump_vcd, test_verilog )
 

@@ -26,10 +26,16 @@ module RegIncrVRTL
       reg_out <= in;
   end
 
-  // ''' SECTION TASK ''''''''''''''''''''''''''''''''''''''''''''''''''''
-  // This model is incomplete. As part of the section you will insert a
-  // combinational concurrent block here to model the incrementer logic.
-  // ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+  // Combinational logic
+
+  logic [7:0] temp_wire;
+  always @(*) begin
+    temp_wire = reg_out + 1;
+  end
+
+  // Combinational logic
+
+  assign out = temp_wire;
 
 endmodule
 

@@ -29,10 +29,23 @@ module RegIncrNstageVRTL
 
   assign reg_incr_out[0] = in;
 
-  // ''' SECTION TASK ''''''''''''''''''''''''''''''''''''''''''''''''''''
-  // This model is incomplete. As part of the tutorial you will insert
-  // code here to instantiate and connect the stages together.
-  // '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+  // Instantiate the registered incrementers and make the connections
+  // between them using a generate block.
+
+  genvar i;
+  generate
+  for ( i = 0; i < p_nstages; i = i + 1 ) begin: gen
+
+    RegIncrVRTL reg_incr
+    (
+      .clk   (clk),
+      .reset (reset),
+      .in    (reg_incr_out[i]),
+      .out   (reg_incr_out[i+1])
+    );
+
+  end
+  endgenerate
 
   // Connect the last signal in the reg_incr_out signal array to the
   // output port of the module.
