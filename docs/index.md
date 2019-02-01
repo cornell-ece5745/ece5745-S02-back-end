@@ -1,56 +1,68 @@
 
-ECE 5745 Section 1: ASIC Flow Front-End
+ECE 5745 Section 2: ASIC Flow Back-End
 ==========================================================================
 
  - Author: Christopher Batten
- - Date: January 24, 2019
+ - Date: January 31, 2019
 
 **Table of Contents**
 
  - Introduction
  - NanGate 45nm Standard-Cell Libraries
- - PyMTL-Based Testing, Simulation, Translation
- - Using Synopsys Design Compiler for Synthesis
+ - Revisiting the ASIC Flow Front-End
+ - Using Cadence Innovus for Place-and-Route
+ - Automating the ASIC Flow
 
 Introduction
 --------------------------------------------------------------------------
 
-In this section, we will be discussing the front-end of the ASIC
-toolflow. More detailed tutorials will be posted on the public course
-website shortly, but this section will at least give you a chance to edit
-some RTL and synthesize that to a gate-level netlist. The following
-diagram illustrates the four primary tools we will be using in ECE 5745
-along with a few smaller secondary tools. Notice that the Synopsys and
-Cadence ASIC tools all require various views from the standard-cell
-library.
+In this section, we will be discussing the back-end of the ASIC toolflow.
+More detailed tutorials will be posted on the public course website
+shortly, but this section will at least give you a chance to take a
+gate-level netlist through place-and-route and energy analysis. The
+following diagram illustrates the four primary tools we will be using in
+ECE 5745 along with a few smaller secondary tools. Notice that the
+Synopsys and Cadence ASIC tools all require various views from the
+standard-cell library.
 
 ![](assets/fig/asic-flow.png)
 
-The "front-end" of the flow is highlighted in red and refers to
-the PyMTL simulator and Synopsys DC:
+The "back-end" of the flow is highlighted in red and refers to Cadence
+Innovus and Synopsys PrimeTime:
 
- 1. We use the PyMTL framework to test, verify, and evaluate the
-    execution time (in cycles) of our design. This part of the flow is
-    very similar to the flow used in ECE 4750. Note that we can write our
-    RTL models in either PyMTL or Verilog. Once we are sure our design is
-    working correctly, we can then start to push the design through the
-    flow. The ASIC flow requires Verilog RTL as an input, so we can use
-    PyMTL's automatic translation tool to translate PyMTL RTL models into
-    Verilog RTL.
+ - We use Cadence Innovus to place-and-route our design, which means to
+   place all of the gates in the gate-level netlist into rows on the chip
+   and then to generate the metal wires that connect all of the gates
+   together. We need to provide Cadence Innovus with similar abstract
+   logical and timing views used in Synopsys DC. Cadence Innovus takes
+   as input the `.lib` file which is the ASCII text version of a `.db`
+   file. In addition, we need to provide Cadence Innovus with technology
+   information in `.lef` and `.captable` format and abstract physical
+   views of the standard-cell library in `.lef` format. Cadence Innovus
+   will generate an updated Verilog gate-level netlist, a `.spef` file
+   which contains parasitic resistance/capacitance information about all
+   nets in the design, and a `.gds` file which contains the final layout.
+   The `.gds` file can be inspected using the open-source Klayout GDS
+   viewer. Synopsys Innovus also generates reports which can be used to
+   accurately characterize area and timing.
 
- 2. We use Synopsys Design Compiler (DC) to synthesize our design, which
-    means to transform the Verilog RTL model into a Verilog gate-level
-    netlist where all of the gates are selected from the standard-cell
-    library. We need to provide Synopsys DC with abstract logical and
-    timing views of the standard-cell library in `.db` format. In
-    addition to the Verilog gate-level netlist, Synopsys DC can also
-    generate a `.ddc` file which contains information about the
-    gate-level netlist and timing, and this `.ddc` file can be inspected
-    using Synopsys Design Vision (DV).
+ - We use Synopsys PrimeTime (PT) to perform power-analysis of our
+   design. We need to provide Synopsys PT with the same abstract logical,
+   timing, and power views used in Synopsys DC and ICC, but in addition
+   we need to provide switching activity information for every net in the
+   design (which comes from the `.saif` file), capacitance information
+   for every net in the design (which comes from the `.sbpf` file), and a
+   file which maps high-level RTL names to low-level gate-level names
+   (which comes from the `.namemap` file). Synopsys PT puts the switching
+   activity, capacitance, clock frequency, and voltage together to
+   estimate the power consumption of every net and thus every module in
+   the design, and these estimates are captured in various reports.
 
-Extensive documentation is provided by Synopsys and Cadence. We have
-organized this documentation and made it available to you on the [public
-course webpage](http://www.csl.cornell.edu/courses/ece5745/syndocs). The
+In this section, we will be focusing on just using Cadence Innovus to
+place and route our design. Extensive documentation is provided by
+Synopsys and Cadence. We have organized this documentation and made it
+available to you on the [public course
+webpage](http://www.csl.cornell.edu/courses/ece5745/syndocs). The
 username/password was distributed during lecture.
 
 The first step is to start MobaXterm. From the _Start_ menu, choose
@@ -67,27 +79,29 @@ track of the top directory for the project.
     % source setup-ece5745.sh
     % mkdir $HOME/ece5745
     % cd $HOME/ece5745
-    % git clone https://github.com/cornell-ece5745/ece5745-S01-front-end
-    % cd ece5745-S01-front-end
+    % git clone https://github.com/cornell-ece5745/ece5745-S02-back-end
+    % cd ece5745-S02-back-end
     % TOPDIR=$PWD
 
 NanGate 45nm Standard-Cell Libraries
 --------------------------------------------------------------------------
 
-A standard-cell library is a collection of combinational and sequential
-logic gates that adhere to a standardized set of logical, electrical, and
-physical policies. For example, all standard cells are usually the same
-height, include pins that align to a predetermined vertical and
-horizontal grid, include power/ground rails and nwells in predetermined
-locations, and support a predetermined number of drive strengths. In this
-course, we will be using the a NanGate 45nm standard-cell library. It is
-based on a "fake" 45nm technology. This means you cannot actually tapeout
-a design using this standard cell library, but the technology is
-representative enough to provide reasonable area, energy, and timing
-estimates for teaching purposes. All of the files associated with this
-standard cell library are located in the `$ECE5745_STDCELLS` directory.
+Recall that a standard-cell library is a collection of combinational and
+sequential logic gates that adhere to a standardized set of logical,
+electrical, and physical policies. For example, all standard cells are
+usually the same height, include pins that align to a predetermined
+vertical and horizontal grid, include power/ground rails and nwells in
+predetermined locations, and support a predetermined number of drive
+strengths. In this course, we will be using the a NanGate 45nm
+standard-cell library. It is based on a "fake" 45nm technology. This
+means you cannot actually tapeout a design using this standard cell
+library, but the technology is representative enough to provide
+reasonable area, energy, and timing estimates for teaching purposes. All
+of the files associated with this standard cell library are located in
+the `$ECE5745_STDCELLS` directory.
 
-Let's take a look at some layout for some cells.
+Let's look at some layout for the standard cell library just like we did
+in the last section.
 
     % klayout -l $ECE5745_STDCELLS/klayout.lyp $ECE5745_STDCELLS/stdcells.gds
 
@@ -101,461 +115,108 @@ be using to create our ASIC chips.
 The Synopsys and Cadence tools do not actually use this layout directly;
 it is actually _too_ detailed. Instead these tools use abstract views of
 the standard cells, which capture logical functionality, timing,
-geometry, and power usage at a much higher level. Let's look at the
-Verilog behavioral specification for the 3-input NAND cell.
+geometry, and power usage at a much higher level. In the last section, we
+looked at Verilog and `.lib` views. The back-end flow takes as input the
+`.lib` view for logical timing information, but it also takes as input a
+`.lef` view which contains _physical_ information about the standard
+cell. Let's look at the LEF for the 3-input NAND cell.
 
-    % less -p NAND3_X1 $ECE5745_STDCELLS/stdcells.v
+    % less -p NAND3_X1 $ECE5745_STDCELLS/stdcells.lef
 
-Note that the Verilog implementation of the 3-input NAND cell looks
-nothing like the Verilog we used in ECE 4750. This cell is implemented
-using a Verilog primitive gate (i.e., `nand`), it includes a delay value
-of one delay unit (i.e., `#1`), and it includes a `specify` block which
-is used for advanced gate-level simulation with back-annotated delays.
+The `.lef` view includes information about the size of the standard cell,
+but also includes information about where every pin is physically
+located. You can use Klayout to view `.lef` files as well. Start Klayout
+like this:
 
-Finally, let's look at an abstract view of the timing and power of the
-3-input NAND cell suitable for use by the ASIC flow. This abstract view
-is in the `.lib` file for the standard cell library.
+    % klayout
 
-    % less -p NAND3_X1 $ECE5745_STDCELLS/stdcells.lib
+Choose _File > Import > LEF_ from the menu. Navigate to the `cells.lef`
+file which is located here:
 
-Now that we have looked at some of the views of the standard cell
-library, we can now try using these views and the ASIC flow front-end to
-synthesize RTL into a gate-level netlist.
+    /classes/ece5745/install/adk-pkgs/freepdk-45nm/stdview/stdcells.lef
 
-PyMTL-Based Testing, Simulation, Translation
+Let's look at a 3-input NAND cell, find the NAND3_X1 cell in the
+left-hand cell list, and then choose _Display > Show as New Top_ from the
+menu. The `.lef` file does not contain any transistor-level information.
+It only contains information relevant to placement and routing.
+
+In addition to physical information about each standard cell, the
+back-end flow also needs to take as input general information about the
+technology. This information is contained in two files:
+
+    % less $ECE5745_STDCELLS/rtk-tech.lef
+    % less $ECE5745_STDCELLS/rtk-typical.captable
+
+The first provides information about the geometry and orientation of
+wires for each metal layer. The second provides information about the
+resistance and capacitance of each metal layer.
+
+Now that we have looked at the physical views of the standard cell
+library, we can now try using these views and the ASIC flow back-end to
+place and route a gate-level netlist.
+
+Revisiting the ASIC Flow Front-End
 --------------------------------------------------------------------------
 
-Our goal in this section is to generate a gate-level netlist for
-the following four-stage registered incrementer:
+As in the last section, we will be using the following four-stage
+registered incrementer as our example design:
 
 ![](assets/fig/regincr-nstage.png)
 
-We will take an incremental design approach. We will start by
-implementing and testing a single registered incrementer, and then we
-will write a generic multi-stage registered incrementer. For this section
-(and indeed the entire course) your test harnesses, simulation drivers,
-function-level models, and cycle-level models will all be written in
-PyMTL. However, you are free to do your actual RTL design work in either
-PyMTL or Verilog. Prof. Batten will now spend a few minutes explaining
-how PyMTL works using these slides:
+Before we can place and route a gate-level netlist, we need to synthesize
+that netlist. This is what we learned about in the last section. Here are
+the steps to generate the Verilog using PyMTL and synthesize the design
+using Synopsys DC.
 
-  - [https://www.csl.cornell.edu/courses/ece5745/handouts/ece5745-S01-front-end-slides.pdf](https://www.csl.cornell.edu/courses/ece5745/handouts/ece5745-S01-front-end-slides.pdf)
+### Test, Simulate, and Translate the Four-Stage Registered Incrementer
 
-### Choose RTL Design Language
-
-So the first step is to decide if you want to do this section using PyMTL
-or Verilog. Edit these two files using `geany` or your favorite text
-editor to let the framework know your choice:
-
-    % geany $TOPDIR/sim/regincr/RegIncrRTL.py
-    % geany $TOPDIR/sim/regincr/RegIncrNstageRTL.py
-
-Set the `rtl_language` variable to `verilog` if you want to use Verilog
-for your RTL design and set it to `pymtl` if you want to use PyMTL for
-your RTL design. For example, this is what it would look like to use
-`verilog`:
-
-    rtl_language = 'verilog'
-
-### Implement, Test, and Translate a Registered Incrementer
-
-Now let's run all of the tests for the registered incrementer:
+Always run the tests before pushing anything through the ASIC flow. There
+is no sense in running the flow if the design is incorrect!
 
     % mkdir $TOPDIR/sim/build
     % cd $TOPDIR/sim/build
     % py.test ../regincr
 
-The tests will fail because we need to finish the implementation. Let's
-start by focusing on the basic registered incrementer module.
+Next we should rerun all the tests with the `--test-verilog` command line
+option to ensure that the design also works after translated into
+Verilog. You should do this step even if you are using Verilog for your
+RTL design.
 
     % cd $TOPDIR/sim/build
-    % py.test ../regincr/RegIncrRTL_test.py
+    % py.test ../regincr --test-verilog
 
-**To Do On Your Own:** Use `geany` or your favorite text editor to open
-the implementation and add the actual combinational logic for the
-increment operation. So for a PyMTL implementation you should edit
-`RegIncrPRTL.py` to look as follows:
-
-    from pymtl import *
-
-    class RegIncrPRTL( Model ):
-
-      # Constructor
-
-      def __init__( s ):
-
-        # Port-based interface
-
-        s.in_ = InPort  ( Bits(8) )
-        s.out = OutPort ( Bits(8) )
-
-        # Sequential logic
-
-        s.reg_out = Wire( Bits(8) )
-
-        @s.tick_rtl
-        def block1():
-          if s.reset:
-            s.reg_out.next = 0
-          else:
-            s.reg_out.next = s.in_
-
-        # Combinational logic
-
-        @s.combinational
-        def block2():
-          s.out.value = s.reg_out + 1
-
-      def line_trace( s ):
-        return "{} ({}) {}".format( s.in_, s.reg_out, s.out )
-
-For a Verilog implementation you should edit `RegIncrVRTL.v` to look as
-follows:
-
-    `ifndef REG_INCR_V
-    `define REG_INCR_V
-
-    module RegIncrVRTL
-    (
-      input  logic       clk,
-      input  logic       reset,
-      input  logic [7:0] in,
-      output logic [7:0] out
-    );
-
-      // Sequential logic
-
-      logic [7:0] reg_out;
-      always @( posedge clk ) begin
-        if ( reset )
-          reg_out <= 0;
-        else
-          reg_out <= in;
-      end
-
-      // Combinational logic
-
-      logic [7:0] temp_wire;
-      always @(*) begin
-        temp_wire = reg_out + 1;
-      end
-
-      // Combinational logic
-
-      assign out = temp_wire;
-
-    endmodule
-
-    `endif /* REG_INCR_V */
-
-If you have an error you can use a trace-back to get a more detailed
-error message:
+The tests are for verification. When we push a design through the flow we
+want to use a simulator which is focused on evaluation. You can run the
+simulator for our four-stage registered incrementer like this:
 
     % cd $TOPDIR/sim/build
-    % py.test ../regincr/RegIncrRTL_test.py --tb=long
-
-Once you have finished the implementation let's rerun the tests:
-
-    % cd $TOPDIR/sim/build
-    % py.test ../regincr/RegIncrRTL_test.py -sv
-
-The `-v` command line option tells `py.test` to be more verbose in its
-output and the `-s` command line option tells `py.test` to print out the
-line tracing. Make sure you understand the line tracing output. You can
-also dump VCD files for waveform debugging with `gtkwave`:
-
-    % cd $TOPDIR/sim/build
-    % py.test ../regincr/RegIncrRTL_test.py -sv --dump-vcd
-    % gtkwave regincr.RegIncrRTL_test.test_small.verilator1.vcd
-
-**To Do On Your Own:** Add some more tests by using `geany` or your
-favorite text editor to open the test script named `RegIncrRTL_test.py`.
-PyMTL provides lots of helper utilities to make testing more productive.
-For example, the `run_test_vector_sim` helper function makes it easy to
-test a small RTL component using a sequence of test inputs and reference
-outputs. Add a new test case for larger inputs by adding the following to
-the end of the test script:
-
-    def test_large( dump_vcd, test_verilog ):
-      run_test_vector_sim( RegIncrRTL(), [
-        ('in_   out*'),
-        [ 0xa0, '?'  ],
-        [ 0xb3, 0xa1 ],
-        [ 0xc6, 0xb4 ],
-        [ 0x00, 0xc7 ],
-      ], dump_vcd, test_verilog )
-
-Now rerun the tests:
-
-    % cd $TOPDIR/sim/build
-    % py.test ../regincr/RegIncrRTL_test.py -sv
-
-PyMTL supports automatically translating PyMTL RTL into Verilog RTL so we
-can then use that Verilog RTL with the ASIC flow. To test the translated
-verilog you can use the `--test-verilog` command line option:
-
-    % cd $TOPDIR/sim/build
-    % py.test ../regincr/RegIncrRTL_test.py --test-verilog
-    % ls *.v
-    % less *.v
-
-You should use `--test-verilog` regardless of whether or not you
-implemented your design in PyMTL or Verilog. Take a look at the generated
-Verilog. If you did your design in Verilog then it should look pretty
-much the same. If you did your design in PyMTL, hopefully it should be
-clear the one-to-one mapping from PyMTL to Verilog.
-
-### Implement, Test, and Translate Multi-Stage Registered Incrementer
-
-Now let's work on composing a single registered incrementer into a
-multi-stage registered incrementer. We will be using _static elaboration_
-to make the multi-stage registered incrementer _generic_. In other words,
-our design will be parameterized by the number of stages so we can easily
-generate a pipeline with one stage, two stages, four stages, etc. Let's
-start by running all of the tests for the multi-stage registered incrementer.
-
-    % cd $TOPDIR/sim/build
-    % py.test ../regincr/RegIncrNstageRTL_test.py
-
-**To Do On Your Own:** Use geany or your favorite text editor to open the
-implementation and add the actual static elabroation logic to instantiate
-a pipeline of registered incrementers. So for a PyMTL implementation you
-should edit `RegIncrNstagePRTL.py` to look as follows:
-
-    from pymtl      import *
-    from RegIncrRTL import RegIncrRTL
-
-    class RegIncrNstagePRTL( Model ):
-
-      # Constructor
-
-      def __init__( s, nstages=2 ):
-
-        # Verilog module name
-
-        s.explicit_modulename = "RegIncrNstageRTL_{}stage".format(nstages)
-
-        # Port-based interface
-
-        s.in_ = InPort  (8)
-        s.out = OutPort (8)
-
-        # Instantiate the registered incrementers
-
-        s.reg_incrs = [ RegIncrRTL() for x in xrange(nstages) ]
-
-        # Connect input port to first reg_incr in chain
-
-        s.connect( s.in_, s.reg_incrs[0].in_ )
-
-        # Connect reg_incr in chain
-
-        for i in xrange( nstages - 1 ):
-          s.connect( s.reg_incrs[i].out, s.reg_incrs[i+1].in_ )
-
-        # Connect last reg_incr in chain to output port
-
-        s.connect( s.reg_incrs[-1].out, s.out )
-
-      # Line tracing
-
-      def line_trace( s ):
-        return "{} ({}) {}".format(
-          s.in_,
-          '|'.join([ str(reg_incr.out) for reg_incr in s.reg_incrs ]),
-          s.out
-        )
-
-For a Verilog implementation you should edit `RegIncrNstageVRTL.py` to
-look as follows:
-
-    `ifndef REG_INCR_NSTAGE_V
-    `define REG_INCR_NSTAGE_V
-
-    `include "regincr/RegIncrVRTL.v"
-
-    module RegIncrNstageVRTL
-    #(
-      parameter p_nstages = 2
-    )(
-      input  logic       clk,
-      input  logic       reset,
-      input  logic [7:0] in,
-      output logic [7:0] out
-    );
-
-      // This defines an _array_ of signals. There are p_nstages+1 signals
-      // and each signal is 8 bits wide. We will use this array of signals to
-      // hold the output of each registered incrementer stage.
-
-      logic [7:0] reg_incr_out [p_nstages+1];
-
-      // Connect the input port of the module to the first signal in the
-      // reg_incr_out signal array.
-
-      assign reg_incr_out[0] = in;
-
-      // Instantiate the registered incrementers and make the connections
-      // between them using a generate block.
-
-      genvar i;
-      generate
-      for ( i = 0; i < p_nstages; i = i + 1 ) begin: gen
-
-        RegIncrVRTL reg_incr
-        (
-          .clk   (clk),
-          .reset (reset),
-          .in    (reg_incr_out[i]),
-          .out   (reg_incr_out[i+1])
-        );
-
-      end
-      endgenerate
-
-      // Connect the last signal in the reg_incr_out signal array to the
-      // output port of the module.
-
-      assign out = reg_incr_out[p_nstages];
-
-    endmodule
-
-    `endif /* REG_INCR_NSTAGE_V */
-
-Before re-running the tests, let's take a look at how we are doing the
-testing in the corresponding test script. Use `geany` or your favorite
-text editor to open up `RegIncrNstageRTL_test.py`. Notice how PyMTL
-enables sophisticated testing for highly parameterized components. The
-test script includes directed tests for two and three stage pipelines
-with various small, large, and random values, and also includes random
-testing with 1, 2, 3, 4, 5, 6 stages. Writing a similar test harness in
-Verilog would likely require 10x more code and be significantly more
-tedious!
-
-Let's re-run a single test and use line tracing to see the data moving
-through the pipeline:
-
-    % cd $TOPDIR/sim/build
-    % py.test ../regincr/RegIncrNstageRTL_test.py -sv -k 3stage_small
-
-And now let's run all of the tests both without and with translation:
-
-    % cd $TOPDIR/sim/build
-    % py.test ../regincr/RegIncrNstageRTL_test.py
-    % py.test ../regincr/RegIncrNstageRTL_test.py --test-verilog
-    % ls *.v
-    % less *.v
-
-Again, take a close look at the generated Verilog.
-
-### Simulate Multi-Stage Registered Incrementer
-
-Test scripts are great for verification, but when we want to push a
-design through the flow we usually want to use a simulator to drive that
-process. A simulator is meant for evaluting the area, energy, and
-performance of a design as opposed to verification. We have included a
-simple simulator called `reg-incr-sim` which takes a list of values on
-the command line and sends these values through the pipeline. Let's see
-the simulator in action:
-
-    % cd $TOPDIR/sim/build
-    % ../regincr/regincr-sim 10 20 30 40
-
-**To Do On Your Own:** Modify the simulator to also do translation. Use
-`geany` or your favorite text editor to add some code to use the
-`TranslationTool` before elaborating the design. Note that you need to do
-this step regardless of whether you are using PyMTL or Verilog for RTL
-design.
-
-    model = RegIncrNstageRTL( nstages=4 )
-    model.vcd_file = "regincr-4stage-sim.vcd"
-    model = TranslationTool( model )           # <-- add this line
-    model.elaborate()
-    sim = SimulationTool( model )
-
-Once you have done this step, let's clean up our build directory, and
-rerun the simulator.
-
-    % cd $TOPDIR/sim/build
-    % trash *
     % ../regincr/regincr-sim 10 20 30 40
     % more RegIncrNstageRTL_4stage.v
 
-We now have the Verilog RTL that we want push through the next step in
-the ASIC front-end flow.
+You should now have the Verilog that we want to push through the ASIC
+flow.
 
-Using Synopsys Design Compiler for Synthesis
---------------------------------------------------------------------------
-
-We use Synopsys Design Compiler (DC) to synthesize Verilog RTL models
-into a gate-level netlist where all of the gates are from the standard
-cell library. So Synopsys DC will synthesize the Verilog + operator into
-a specific arithmetic block at the gate-level. Based on various
-constraints it may synthesize a ripple-carry adder, a carry-look-ahead
-adder, or even more advanced parallel-prefix adders.
+### Synthesize Verilog RTL to a Verilog Gate-Level Netlist
 
 We start by creating a subdirectory for our work, and then launching
 Synopsys DC.
 
-    % mkdir $TOPDIR/asic/synopsys-dc
-    % cd $TOPDIR/asic/synopsys-dc
+    % mkdir -p $TOPDIR/asic-manual/synopsys-dc
+    % cd $TOPDIR/asic-manual/synopsys-dc
     % dc_shell-xg-t
 
-We need to set two variables before starting to work in Synopsys DC.
-These variables tell Synopsys DC the location of the standard cell
-library `.db` file which is just a binary version of the `.lib` file we
-saw earlier.
+Enter the following commands which were explained in the last discussion
+section:
 
-       dc_shell> set_app_var target_library "$env(ECE5745_STDCELLS)/stdcells.db"
-       dc_shell> set_app_var link_library   "* $env(ECE5745_STDCELLS)/stdcells.db"
-
-We are now ready to read in the Verilog file which contains the top-level
-design and all referenced modules. We do this with two commands. The
-analyze command reads the Verilog RTL into an intermediate internal
-representation. The elaborate command recursively resolves all of the
-module references starting from the top-level module, and also infers
-various registers and/or advanced data-path components.
-
+    dc_shell> set_app_var target_library "$env(ECE5745_STDCELLS)/stdcells.db"
+    dc_shell> set_app_var link_library   "* $env(ECE5745_STDCELLS)/stdcells.db"
     dc_shell> analyze -format sverilog ../../sim/build/RegIncrNstageRTL_4stage.v
     dc_shell> elaborate RegIncrNstageRTL_4stage
-
-We can use the `check_design` command to make sure there are no obvious
-errors in our Verilog RTL.
-
     dc_shell> check_design
-
-It is _critical_ that you review all warnings. Often times there will be
-something very wrong in your Verilog RTL which means any results from
-using the ASIC tools is completely bogus. Synopsys DC will output a
-warning, but Synopsys DC will usually just keep going, potentially
-producing a completely incorrect gate-level model!
-
-We now need to create a clock constraint to tell Synopsys DC what our
-target cycle time is:
-
     dc_shell> create_clock clk -name ideal_clock1 -period 1
-
-Finaly, the `compile` comamnd will do the actual logic synthesis:
-
     dc_shell> compile
-
-We write the output to a Verilog gate-level netlist and a `.ddc` file
-which we can use with Synopsys DV.
-
     dc_shell> write -format verilog -hierarchy -output post-synth.v
     dc_shell> write -format ddc     -hierarchy -output post-synth.ddc
-
-We can also generate usful reports about area, energy, and timing. Prof.
-Batten will spend some time explaining these reports:
-
-    dc_shell> report_resources -nosplit -hierarchy
-    dc_shell> report_timing -nosplit -transition_time -nets -attributes
-    dc_shell> report_area -nosplit -hierarchy
-    dc_shell> report_power -nosplit -hierarchy
-
-Make some notes about what you find. Note the total cell area used in
-this design. Finally, we go ahead and exit Synopsys DC.
-
     dc_shell> exit
 
 Take a few minutes to examine the resulting Verilog gate-level netlist.
@@ -563,55 +224,322 @@ Notice that the module hierarchy is preserved.
 
     % less post-synth.v
 
-Take a close look at the implementation of the incrementer. What kind of
-standard cells has the synthesis tool chosen? What kind of adder
-microarchitecture?
+This is the gate-level netlist that we now want to place and route.
 
-We can use the Synopsys Design Vision (DV) tool for browsing the
-resulting gate-level netlist, plotting critical path histograms, and
-generally analyzing our design. Start Synopsys DV and setup the
-`target_library` and `link_library` variables as before.
+Using Cadence Innovus for Place-and-Route
+--------------------------------------------------------------------------
 
-    % design_vision-xg
-    design_vision> set_app_var target_library "$env(ECE5745_STDCELLS)/stdcells.db"
-    design_vision> set_app_var link_library   "* $env(ECE5745_STDCELLS)/stdcells.db"
+We will be running Cadence Innovus in a separate directory to keep the
+input and output files separate.
 
-You can use the following steps to open the `.ddc` file generated during
-synthesis.
+    % mkdir -p $TOPDIR/asic-manual/cadence-innovus
+    % cd $TOPDIR/asic-manual/cadence-innovus
 
- - Choose _File > Read_ from the menu
- - Open the `post-synth.dcc` file
+Before starting Cadence Innovus, we need to create two files which will
+be loaded into the tool. The first file is a `.sdc` file which contains
+timing constraint information about our design. This file is where we
+specify our target clock period, but it is also where we could specify
+input or output delay constraints (e.g., the output signals must be
+stable 200ps before the rising edge). Use Geany or your favorite text
+editor to create a file named `constraints.sdc` in
+`$TOPDIR/asic-manual/cadence-innovus` with the following content:
 
-You can use the following steps to view the gate-level schematic for the
-design.:
+    create_clock clk -name ideal_clock -period 1
 
- - Select the `RegIncrNstageRTL_4stage` module in the _Logical Hierarchy_ panel
- - Choose _Schematic > New Schematic View_ from the menu
- - Double click the box representing the `RegIncrNstageRTL_4stage` in the schematic view
- - Continue to double click to move through the design hierarchy
+The `create_clock` command is similar to the command we used in
+synthesis, and usually, we use the same target clock period that we used
+for synthesis. In this case, we are targeting a 1GHz clock frequency
+(i.e., a 1ns clock period).
 
-You can determine the type of module or gate by selecting the module or
-gate and choosing _Edit > Properties_ from the menu. Then look for
-`ref_name`. You should be able to see the schematic for a single stage of
-the pipline including the flip-flops and an `add` module. See if you can
-figure out why the synthesis tool has inserted AND gates in front of each
-flip-flop. If you look inside the `add` module you should be able to see
-the adder microarchitecture.
+The second file is a "multi-mode multi-corner" (MMMC) analysis file. This
+file specifies what "corner" to use for our timing analysis. A corner is
+a characterization of the standard cell library and technology with
+specific assumptions about the process temperature, and voltage (PVT). So
+we might have a "fast" corner which assumes best-case process
+variability, low temperature, and high voltage, or we might have a "slow"
+corner which assumes worst-case variability, high temperature, and low
+voltage. To ensure our design worked across a range of operating
+conditions, we need to evaluate our design across a range of corners. In
+this course, we will keep things simple by only considering a "typical"
+corner (i.e., average PVT). Use Geany or your favorite text editor to
+create a file named `setup-timing.tcl` in
+`$TOPDIR/asic-manual/cadence-innovus` with the following content:
 
-You can use the following steps to view a histogram of path slack, and
-also to open a gave-level schematic of just the critical path.
+    create_rc_corner -name typical \
+       -cap_table "$env(ECE5745_STDCELLS)/rtk-typical.captable" \
+       -T 25
 
- - Choose _Timing > Path Slack_ from the menu
- - Click _OK_ in the pop-up window
- - Select the left-most bar in the histogram to see list of most critical paths
- - Right click first path (the critical path) and choose _Path Schematic_
+    create_library_set -name libs_typical \
+       -timing [list "$env(ECE5745_STDCELLS)/stdcells.lib"]
 
-**To-Do On Your Own:** Push the multi-stage registered incrementer
-through the flow again, but this type use a more faster clock constraint.
-This will force the tools to be more agress as they attempt to "meet
-timing". Try using a clock constraint of 0.3ns instead of 1ns. Use
-`report_resources` to determine what kind of adder microarchitecture the
-synthesis tool has chosen. Use `report_timing` to see if the tool is able
-to generate a gate-level netlist that can really run at 333MHz. Use
-`report_area` to compare the area of the design with the 0.3ns clock
-constraint to the design with the 1ns clock constraint.
+    create_delay_corner -name delay_default \
+       -early_library_set libs_typical \
+       -late_library_set libs_typical \
+       -rc_corner typical
+
+    create_constraint_mode -name constraints_default \
+       -sdc_files [list constraints.sdc]
+
+    create_analysis_view -name analysis_default \
+       -constraint_mode constraints_default \
+       -delay_corner delay_default
+
+    set_analysis_view \
+       -setup [list analysis_default] \
+       -hold [list analysis_default]
+
+The `create_rc_corner` command loads in the `.captable` file that we
+examined earlier. This file includes information about the resistance and
+capacitance of every metal layer. Notice that we are loading in the
+"typical" captable and we are specifying an "average" operating
+temperature of 25 degC. The `create_library_set` command loads in the
+`.lib` file that we examined in the last section. This file includes
+information about the input/output capacitance of each pin in each
+standard cell along with the delay from every input to every output in
+the standard cell. The `create_delay_corner` specifies a specific corner
+that we would like to use for our timing analysis by putting together a
+`.captable` and a `.lib` file. In this specific example, we are creating
+a typical corner by putting together the typical `.captable` and typical
+`.lib` we just loaded. The `create_constraint_mode` command loads in the
+`.sdc` file we mentioned earlier in this section. The
+`create_analysis_view` command puts together constraints with a specific
+corner, and the `set_analysis_view` command tells Cadence Innovus that we
+would like to use this specific analysis view for both setup and hold
+time analysis.
+
+Now that we have created our `constraints.sdc` and `setup-timing.tcl`
+files we can start Cadence Innovus:
+
+    % innovus -64
+
+This will launch the GUI. We can enter commands in the terminal and watch
+the effect of these commands on our design in the GUI. We need to set
+various variables before starting to work in Cadence Innovus. These
+variables tell Cadence Innovus the location of the MMMC file, the
+location of the Verilog gate-level netlist, the name of the top-level
+module in our design, the location of the `.lef` files, and finally the
+names of the power and ground nets.
+
+    innovus> set init_mmmc_file "setup-timing.tcl"
+    innovus> set init_verilog   "../synopsys-dc/post-synth.v"
+    innovus> set init_top_cell  "RegIncrNstageRTL_4stage"
+    innovus> set init_lef_file  "$env(ECE5745_STDCELLS)/rtk-tech.lef $env(ECE5745_STDCELLS)/stdcells.lef"
+    innovus> set init_gnd_net   "VSS"
+    innovus> set init_pwr_net   "VDD"
+
+We can now use the `init_design` command to read in the verilog, set the
+design name, setup the timing analysis views, read the technology `.lef`
+for layer information, and read the standard cell `.lef` for physical
+information about each cell used in the design.
+
+    innovus> init_design
+
+We start by working on power planning which is the process of routing the
+power and ground signals across the chip. First, we use the `floorPlan`
+command to set the dimensions for our chip.
+
+    innovus> floorPlan -su 1.0 0.70 4.0 4.0 4.0 4.0
+
+In this example, we have chosen the aspect ration to be 1.0, the target
+cell utilization to be 0.7, and we have added 4.0um of margin around the
+top, bottom, left, and right of the chip. This margin gives us room for
+the power ring which will go around the entire chip.
+
+Often when working with the ASIC flow back-end, we need to explicitly
+tell the tools how the logical design connects to the physical aspects of
+the chip. For example, the next step is to tell Cadence Innovus that
+`VDD` and `VSS` in the gate-level netlist correspond to the physical pins
+labeled `VDD` and `VSS` in the `.lef` files.
+
+    innovus> globalNetConnect VDD -type pgpin -pin VDD -inst * -verbose
+    innovus> globalNetConnect VSS -type pgpin -pin VSS -inst * -verbose
+
+The next step in power planning is to draw M1 wires for the power and
+ground rails that go along each row of standard cells.
+
+    innovus> sroute -nets {VDD VSS}
+
+Now we create a power ring around our chip using the `addRing` command. A
+power ring ensures we can easily get power and ground to all standard
+cells. The command takes parameters specifying the width of each wire in
+the ring, the spacing between the two rings, and what metal layers to use
+for the ring.
+
+    innovus> addRing -nets {VDD VSS} -width 0.6 -spacing 0.5 \
+                     -layer [list top 7 bottom 7 left 6 right 6]
+
+We have power and ground rails along each row of standard cells and a
+power ring, so now we need to hook these up. We can use the `addStripe`
+command to draw wires and automatically insert vias whenever wires cross.
+First we draw the vertical "stripes".
+
+    innovus> addStripe -nets {VSS VDD} -layer 6 -direction vertical \
+                       -width 0.4 -spacing 0.5 -set_to_set_distance 5 -start 0.5
+
+And then we draw the horizontal "stripes".
+
+    innovus> setAddStripeMode -stacked_via_bottom_layer 6 \
+                       -stacked_via_top_layer    7
+
+    innovus> addStripe -nets {VSS VDD} -layer 7 -direction horizontal \
+                       -width 0.4 -spacing 0.5 -set_to_set_distance 5 -start 0.5
+
+Now that we have finished our basic power planning we can do the initial
+placement and routing of the standard cells using the `place_design`
+command:
+
+    innovus> place_design
+
+You should be able to see the standard cells placed in the rows along
+with preliminary routing to connect all of the standard cells together.
+You can toggle the visibility of metal layers by pressing the number keys
+on the keyboard. So try toggling the visibility of M1, M2, M3, etc. You
+can visualize how the modules in the original Verilog mapped to the
+place-and-routed design by using the Design Browser. Choose the _Windows
+> Workspaces > Design Browser + Physical_ menu option. Then use the
+_Design Browser_ to click on specific modules or nets to highlight them
+in the physical view.
+
+The `place_design` command will perform a very preliminary route to help
+ensure a good placement, but we will now do a more detailed routing pass
+for the clock and signals to improve the quality of results. The
+`cccopt_design` command will do clock tree synthesis optimization to
+improve the quality of the clock tree (e.g., less clock skew across the
+chip). Before running the command make sure you can see the physical view
+of the chip, and then watch how the clock net changes after the command
+is complete. You can choose to just show the clock by changing the
+visibility of nets in the right-hand panel.
+
+    innovus> ccopt_design
+
+We can use the `routeDesign` to do detailed timing-driven routing of all
+of the signals. As before, make sure you watch the physical view to see
+the result before and after running this command. You should be able to
+appreciate that the final result requires fewer and shorter wires.
+
+    innovus> routeDesign
+
+The final step is to insert "filler" cells. Filler cells are essentially
+empty standard cells whose sole purpose is to connect the wells across
+each standard cell row.
+
+    innovus> setFillerMode -corePrefix FILL -core "FILLCELL_X4 FILLCELL_X2 FILLCELL_X1"
+    innovus> addFiller
+
+Now we are basically done! Obviously there are many more steps required
+before you can really tape out a chip. We would need to add an I/O ring
+to connect the chip to the package, we would need to do further
+verification, and additional optimization.
+
+For example, one thing we want to do is verify that the gate-level
+netlist matches what is really in the final layout. We can do this using
+the `verifyConnectivity` command. We can also do a preliminary "design
+rule check" to make sure that the generated metal interconnect does not
+violate any design rules with the `verify_drc` command.
+
+    innovus> verifyConnectivity
+    innovus> verify_drc
+
+Now we can generate various artifacts. We might want to save the final
+gate-level netlist for the chip since Cadence Innovus will often insert
+new cells or change cells during its optimization passes.
+
+    innovus> saveNetlist post-par.v
+
+We can also extract resistance and capacitance for the metal
+interconnect and write this to a special `.spef` file. This file can be
+used for later timing and/or power analysis.
+
+    innovus> extractRC
+    innovus> rcOut -rc_corner typical -spef typical.spef
+
+And of course the step is to generate the real layout as a `.gds` file.
+This is what we will send to the foundry when we are ready to tapeout the
+chip.
+
+    innovus> streamOut post-par.gds \
+               -merge "$env(ECE5745_STDCELLS)/stdcells.gds" \
+               -mapFile "$env(ECE5745_STDCELLS)/rtk-stream-out.map"
+
+We can also use Cadence Innovus to do timing, area, and power analysis
+similar to what we did with Synopsys DC. These post-place-and-route
+results will be _much_ more accurate than the preliminary post-synthesis
+results.
+
+    innovus> report_timing
+    innovus> report_area
+    innovus> report_power -hierarchy all
+
+Finally, we go ahead and exit Cadence Innovus.
+
+    innovus> exit
+
+If you want you can open up the final layout using Klayout.
+
+    % klayout -l $ECE5745_STDCELLS/klayout.lyp post-par.gds
+
+Choose _Display > Full Hierarchy_ from the menu to display the entire
+design. Zoom in and out to see the individual transistors as well as the
+entire chip.
+
+Automating the ASIC Flow
+--------------------------------------------------------------------------
+
+Our approach so far has enabled us to see the key tools used for the ASIC
+flow front- and back-end, but we have been entering commands manually for
+each tool. This is obviously very tedious and error prone. An agile
+hardware design flow demands automation to simplify rapidly exploring the
+area, energy, timing design space of one or more designs. Luckily,
+Synopsys and Cadence tools can be easily scripted using TCL, and even
+better, the ECE 5745 staff have already created these TCL scripts along
+with a set of Makefiles to run thee TCL scripts.
+
+The automated flow is located in the `asic` subdirectory of this repo.
+Take a look at the `setup-design.mk` file. You will need to add an entry
+to this Makefile fragment for every design you want to push through the
+flow. We have already added the following entry for you:
+
+    ifeq ($(design),regincr)
+      design_name  = RegIncrNstageRTL_4stage
+      clock_period = 1.0
+      design_v     = ../../sim/build/RegIncrNstageRTL_4stage.v
+    endif
+
+This entry is for the `regincr` design. The `design_v` is the Verilog
+file containing the RTL for the design we want to push through the flow,
+and the `design_name` is the name of the corresponding top-level module.
+The `clock_period` is the target clock period we want to use for
+synthesis and place-and-route.
+
+To get started create a build directory and run the configure script. You
+need to explicitly specify which design you want to push through the flow
+when you run the configure script.
+
+    % cd $TOPDIR/asic
+    % mkdir build
+    % cd build
+    % ../configure design=regincr
+    % make list
+
+The `list` Makefile target will display the various targets that you can
+use to manage the flow. The following two commands will perform synthesis
+and then place-and-route.
+
+    % cd $TOPDIR/asic/build
+    % make synth
+    % make signoff
+
+It will take 4-5 minutes to push the design through the flow. The
+automated flow takes longer than the manual steps we used above because
+the automated flow is using a much more sophisticated approach with many
+more optimization steps. Be aware that for larger designs it can take
+quite a while to push a design through the entire flow. Consider using
+just the ASIC flow front-end to ensure your design is synthesizable and
+to gain some rough early intuition on area and timing. Then you can
+iterate quickly and eventually focus on the ASIC flow back-end.
+
+You can use the `debug-` targets to view the final design in Cadence
+Innovus.
+
+    % make debug-signoff
+

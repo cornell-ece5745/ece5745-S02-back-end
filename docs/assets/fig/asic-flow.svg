@@ -17,7 +17,7 @@
    version="1.0"
    sodipodi:docname="asic-flow.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
-   inkscape:export-filename="/Users/cbatten/vc/git-hub/cornell-ece5745/ece5745-labs/scripts/ece5745-tut5-asic-tools/docs/assets/fig/asic-flow.png"
+   inkscape:export-filename="/Users/cbatten/vc/git-hub/cornell-ece5745/ece5745-S02-back-end/docs/assets/fig/asic-flow.png"
    inkscape:export-xdpi="123.2121"
    inkscape:export-ydpi="123.2121">
   <sodipodi:namedview
@@ -30,9 +30,9 @@
      objecttolerance="1"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.1671554"
-     inkscape:cx="106.29727"
-     inkscape:cy="234.94786"
+     inkscape:zoom="2.1852632"
+     inkscape:cx="175"
+     inkscape:cy="237.5"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -202,7 +202,7 @@
        transform="matrix(-1,0,0,1,640.323,5)"
        id="g4804" />
     <rect
-       style="color:#000000;fill:#fffbd7;stroke:#c51717;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       style="color:#000000;fill:#fffbd7;stroke:#000000;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        id="rect2990"
        width="120"
        height="30"
@@ -267,7 +267,7 @@
        height="30"
        width="120"
        id="rect3846"
-       style="color:#000000;fill:#fffbd7;stroke:#544300;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+       style="color:#000000;fill:#fffbd7;stroke:#c51717;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
     <text
        id="text3848"
        y="628.70215"
@@ -363,7 +363,7 @@
          inkscape:transform-center-y="-3.7759982" />
     </g>
     <rect
-       style="color:#000000;fill:#fffbd7;stroke:#c51717;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       style="color:#000000;fill:#fffbd7;stroke:#000000;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        id="rect3278"
        width="120"
        height="30"
@@ -417,7 +417,7 @@
        height="30"
        width="120"
        id="rect3296"
-       style="color:#000000;fill:none;stroke:#c51717;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+       style="color:#000000;fill:none;stroke:#000000;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
     <text
        id="text3298"
        y="568.70215"
@@ -469,12 +469,14 @@
        inkscape:transform-center-x="-11.599002"
        inkscape:transform-center-y="-3.7759982" />
     <rect
-       style="color:#000000;fill:none;stroke:#000000;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       style="color:#000000;fill:none;stroke:#c51717;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        id="rect3316"
        width="120"
        height="30"
        x="214"
-       y="669" />
+       y="669"
+       inkscape:export-xdpi="123.2121"
+       inkscape:export-ydpi="123.2121" />
     <text
        xml:space="preserve"
        style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;writing-mode:lr-tb;text-anchor:middle;display:inline;overflow:visible;visibility:visible;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.5;marker:none;enable-background:accumulate"
@@ -487,7 +489,7 @@
          y="688.70215"
          style="font-size:12px;line-height:1.10000002">Klayout</tspan></text>
     <rect
-       style="color:#000000;fill:#fffbd7;stroke:#544300;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       style="color:#000000;fill:#fffbd7;stroke:#c51717;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        id="rect3322"
        width="120"
        height="30"
@@ -519,7 +521,7 @@
          x="187.50488"
          sodipodi:role="line"
          id="tspan3344"
-         style="font-size:12px;line-height:1.10000002">.spbf</tspan></text>
+         style="font-size:12px;line-height:1.10000002">.spef</tspan></text>
     <g
        transform="matrix(-1,0,0,1,520.323,533.68112)"
        inkscape:transform-center-y="4.8426208"
@@ -756,7 +758,7 @@
          id="tspan4205"
          x="309.04526"
          y="618.92444"
-         style="font-size:12px;line-height:1.10000002">.db, .tf, .captable</tspan></text>
+         style="font-size:12px;line-height:1.10000002">.lib, .lef, .captable</tspan></text>
     <path
        sodipodi:nodetypes="cc"
        inkscape:connector-curvature="0"
