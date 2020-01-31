@@ -2,8 +2,8 @@
 ECE 5745 Section 2: ASIC Flow Back-End
 ==========================================================================
 
- - Author: Christopher Batten
- - Date: January 31, 2019
+ - Author: Christopher Batten & Khalid Al-Hawaj
+ - Date: January 31, 2020
 
 **Table of Contents**
 
@@ -11,7 +11,7 @@ ECE 5745 Section 2: ASIC Flow Back-End
  - NanGate 45nm Standard-Cell Libraries
  - Revisiting the ASIC Flow Front-End
  - Using Cadence Innovus for Place-and-Route
- - Automating the ASIC Flow
+ - Automating the ASIC Flow (mflowgen)
 
 Introduction
 --------------------------------------------------------------------------
@@ -494,31 +494,50 @@ Synopsys and Cadence tools can be easily scripted using TCL, and even
 better, the ECE 5745 staff have already created these TCL scripts along
 with a set of Makefiles to run thee TCL scripts.
 
-The automated flow is located in the `asic` subdirectory of this repo.
-Take a look at the `setup-design.mk` file. You will need to add an entry
-to this Makefile fragment for every design you want to push through the
-flow. We have already added the following entry for you:
+The automated flow is located in the `mflowgen` subdirectory of this repo.
+Take a look at the `designs` subdirectory. In the subdirectory, you should
+see a directory already created for `RegIncr`, which holds all the
+configuration required to derive the flow. Take the time to inspect the
+file `construct.py`, which describes the desired flow to be ran.
+As an input, the flow expects the file `design.v` to be placed inside
+`rtl/outputs`. You can execute the following commands to inspect the
+structure of the directory:
 
-    ifeq ($(design),regincr)
-      design_name  = RegIncrNstageRTL_4stage
-      clock_period = 1.0
-      design_v     = ../../sim/build/RegIncrNstageRTL_4stage.v
-    endif
+  % cd mflowgen/designs/RegIncr
+  % tree ./
 
-This entry is for the `regincr` design. The `design_v` is the Verilog
-file containing the RTL for the design we want to push through the flow,
-and the `design_name` is the name of the corresponding top-level module.
-The `clock_period` is the target clock period we want to use for
+Inside the `construct.py` file, there are a lot of information, but the
+important configuration is placed at the top of the file:
+
+  #-----------------------------------------------------------------------
+  # Parameters
+  #-----------------------------------------------------------------------
+
+  adk_name = 'freepdk-45nm'
+  adk_view = 'view-standard'
+
+  parameters = {
+    'construct_path' : __file__,
+    'design_name'    : 'RegIncr4stageRTL',
+    'clock_period'   : 2.0,
+    'adk'            : adk_name,
+    'adk_view'       : adk_view,
+    'topographical'  : True,
+  }
+
+The `adk_name` specifies the targeted technology node and fabrication
+process. The `design_name` is the name of the corresponding top-level
+module. The `clock_period` is the target clock period we want to use for
 synthesis and place-and-route.
 
 To get started create a build directory and run the configure script. You
 need to explicitly specify which design you want to push through the flow
 when you run the configure script.
 
-    % cd $TOPDIR/asic
+    % cd $TOPDIR/mflowgen
     % mkdir build
     % cd build
-    % ../configure design=regincr
+    % ../configure --design ../designs/RegIncr
     % make list
 
 The `list` Makefile target will display the various targets that you can
@@ -526,8 +545,8 @@ use to manage the flow. The following two commands will perform synthesis
 and then place-and-route.
 
     % cd $TOPDIR/asic/build
-    % make synth
-    % make signoff
+    % make synopsys-dc-synthesis
+    % make cadence-innovus-place-route
 
 It will take 4-5 minutes to push the design through the flow. The
 automated flow takes longer than the manual steps we used above because
@@ -541,13 +560,12 @@ iterate quickly and eventually focus on the ASIC flow back-end.
 You can use the `debug-` targets to view the final design in Cadence
 Innovus.
 
-    % make debug-signoff
+    % make debug-cadence-innovus-place-route
 
-*To Do On Your Own:* Modify the `setup-design.mk` file to target a much
+*To Do On Your Own:* Modify the `construct.py` file to target a much
 more aggressive clock period of only 300ps. Use the automated ASIC flow
 to push the four-stage registered incrementer through the flow again.
-Then use `debug-signoff` to bring the final deisgn up in Cadence Innovus.
-Explore the design to see how the tool has placed and routed the more
-complex incrementers. Use the `report_timing` and `report_area` commands
-to look at the critical path and area.
-
+Then use `debug-cadence-innovus-place-route` to bring the final deisgn
+up in Cadence Innovus. Explore the design to see how the tool has placed
+and routed the more complex incrementers. Use the `report_timing` and
+`report_area` commands to look at the critical path and area.
