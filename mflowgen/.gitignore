@@ -1,0 +1,34 @@
+#=========================================================================
+# Git Ignore Files
+#=========================================================================
+
+build*/
+autom4te.cache/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.DS_Store
+.cache/
+.nfs*
+
+# ninja
+
+*.ninja
+.ninja_deps
+.ninja_log
+
+# graphviz
+
+*.dot
+*.ps
+*.pdf
+
+# backup
+
+*.backup
+
+# mflowgen
+
+*.stamp.*
+*.execstamp.*
+
