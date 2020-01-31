@@ -191,7 +191,7 @@ simulator for our four-stage registered incrementer like this:
 
     % cd $TOPDIR/sim/build
     % ../regincr/regincr-sim 10 20 30 40
-    % more RegIncrNstageRTL_4stage.v
+    % more RegIncr4stageRTL.sv
 
 You should now have the Verilog that we want to push through the ASIC
 flow.
@@ -210,8 +210,8 @@ section:
 
     dc_shell> set_app_var target_library "$env(ECE5745_STDCELLS)/stdcells.db"
     dc_shell> set_app_var link_library   "* $env(ECE5745_STDCELLS)/stdcells.db"
-    dc_shell> analyze -format sverilog ../../sim/build/RegIncrNstageRTL_4stage.v
-    dc_shell> elaborate RegIncrNstageRTL_4stage
+    dc_shell> analyze -format sverilog ../../sim/build/RegIncr4stageRTL.sv
+    dc_shell> elaborate RegIncr4stageRTL
     dc_shell> check_design
     dc_shell> create_clock clk -name ideal_clock1 -period 1
     dc_shell> compile
@@ -322,7 +322,7 @@ names of the power and ground nets.
 
     innovus> set init_mmmc_file "setup-timing.tcl"
     innovus> set init_verilog   "../synopsys-dc/post-synth.v"
-    innovus> set init_top_cell  "RegIncrNstageRTL_4stage"
+    innovus> set init_top_cell  "RegIncr4stageRTL"
     innovus> set init_lef_file  "$env(ECE5745_STDCELLS)/rtk-tech.lef $env(ECE5745_STDCELLS)/stdcells.lef"
     innovus> set init_gnd_net   "VSS"
     innovus> set init_pwr_net   "VDD"
@@ -503,27 +503,27 @@ As an input, the flow expects the file `design.v` to be placed inside
 `rtl/outputs`. You can execute the following commands to inspect the
 structure of the directory:
 
-  % cd mflowgen/designs/RegIncr
-  % tree ./
+    % cd mflowgen/designs/RegIncr
+    % tree ./
 
 Inside the `construct.py` file, there are a lot of information, but the
 important configuration is placed at the top of the file:
 
-  #-----------------------------------------------------------------------
-  # Parameters
-  #-----------------------------------------------------------------------
+    #-----------------------------------------------------------------------
+    # Parameters
+    #-----------------------------------------------------------------------
 
-  adk_name = 'freepdk-45nm'
-  adk_view = 'view-standard'
+    adk_name = 'freepdk-45nm'
+    adk_view = 'view-standard'
 
-  parameters = {
-    'construct_path' : __file__,
-    'design_name'    : 'RegIncr4stageRTL',
-    'clock_period'   : 2.0,
-    'adk'            : adk_name,
-    'adk_view'       : adk_view,
-    'topographical'  : True,
-  }
+    parameters = {
+      'construct_path' : __file__,
+      'design_name'    : 'RegIncr4stageRTL',
+      'clock_period'   : 2.0,
+      'adk'            : adk_name,
+      'adk_view'       : adk_view,
+      'topographical'  : True,
+    }
 
 The `adk_name` specifies the targeted technology node and fabrication
 process. The `design_name` is the name of the corresponding top-level
