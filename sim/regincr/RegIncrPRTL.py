@@ -30,10 +30,11 @@ class RegIncrPRTL( Component ):
       else:
         s.reg_out <<= s.in_
 
-    # ''' SECTION TASK '''''''''''''''''''''''''''''''''''''''''''''''''''
-    # This model is incomplete. As part of the section you will insert a
-    # combinational concurrent block here to model the incrementer logic.
-    # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    # Combinational logic
+
+    @s.update
+    def block2():
+      s.out = s.reg_out + b8(1)
 
     # Configuration
 
