@@ -5,11 +5,11 @@
 import collections
 import pytest
 
-from random           import sample
+from random             import sample
 
-from pymtl            import *
-from pclib.test       import run_test_vector_sim, mk_test_case_table
-from RegIncrNstageRTL import RegIncrNstageRTL
+from pymtl3             import *
+from pymtl3.stdlib.test import run_test_vector_sim, mk_test_case_table
+from .RegIncrNstageRTL  import RegIncrNstageRTL
 
 #-------------------------------------------------------------------------
 # mk_test_vector_table
@@ -23,7 +23,7 @@ def mk_test_vector_table( nstages, inputs ):
   last_results = collections.deque( ['?']*nstages )
   for input_ in inputs:
     test_vector_table.append( [ input_, last_results.popleft() ] )
-    last_results.append( Bits( 8, input_ + nstages, trunc=True ) )
+    last_results.append( b8( input_ + nstages ) )
 
   return test_vector_table
 

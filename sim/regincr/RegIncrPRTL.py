@@ -5,36 +5,45 @@
 # is read from the input port, registered, incremented by one, and
 # finally written to the output port.
 
-from pymtl import *
+from pymtl3 import *
+from pymtl3.passes.backends.sverilog import TranslationConfigs
 
-class RegIncrPRTL( Model ):
+class RegIncrPRTL( Component ):
 
   # Constructor
 
-  def __init__( s ):
+  def construct( s ):
 
     # Port-based interface
 
-    s.in_ = InPort  ( Bits(8) )
-    s.out = OutPort ( Bits(8) )
+    s.in_ = InPort  ( Bits8 )
+    s.out = OutPort ( Bits8 )
 
     # Sequential logic
 
-    s.reg_out = Wire( Bits(8) )
+    s.reg_out = Wire( Bits8 )
 
-    @s.tick_rtl
+    @s.update_ff
     def block1():
       if s.reset:
-        s.reg_out.next = 0
+        s.reg_out <<= b8(0)
       else:
-        s.reg_out.next = s.in_
+        s.reg_out <<= s.in_
 
-    # Combinational logic
+    # ''' SECTION TASK '''''''''''''''''''''''''''''''''''''''''''''''''''
+    # This model is incomplete. As part of the section you will insert a
+    # combinational concurrent block here to model the incrementer logic.
+    # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-    @s.combinational
-    def block2():
-      s.out.value = s.reg_out + 1
+    # Configuration
+
+    s.config_sverilog_translate = TranslationConfigs(
+      # Let --test-verilog option control whether we will translate PRTL
+      translate = False,
+      # What is the module name of the top level in the translated Verilog?
+      explicit_module_name = 'RegIncrRTL',
+    )
 
   def line_trace( s ):
-    return "{} ({}) {}".format( s.in_, s.reg_out, s.out )
+    return f"{s.in_} ({s.reg_out}) {s.out}"
 

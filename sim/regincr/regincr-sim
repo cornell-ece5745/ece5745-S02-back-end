@@ -3,29 +3,59 @@
 # regincr-sim <input-values>
 #=========================================================================
 
-from pymtl            import *
-from sys              import argv
-from RegIncrNstageRTL import RegIncrNstageRTL
+import os
+import sys
+
+from pymtl3                          import *
+from pymtl3.passes                   import TracingConfigs
+from pymtl3.passes.backends.sverilog import TranslationImportPass, VerilogPlaceholderPass
+
+# Hack to add project root to python path
+
+sim_dir = os.path.dirname( os.path.abspath( __file__ ) )
+while sim_dir:
+  if os.path.exists( sim_dir + os.path.sep + ".pymtl_sim_root" ):
+    sys.path.insert(0,sim_dir)
+    break
+  sim_dir = os.path.dirname(sim_dir)
+
+from regincr.RegIncrNstageRTL import RegIncrNstageRTL
 
 # Get list of input values from command line
 
-input_values = [ int(x,0) for x in argv[1:] ]
+input_values = [ int(x,0) for x in sys.argv[1:] ]
 
 # Add three zero values to end of list of input values
 
-input_values.extend( [0]*6 )
+input_values.extend( [0, 0, 0] )
 
-# Create a simulator using simulation tool
+# Instantiate a 4-stage registered incrementer
 
 model = RegIncrNstageRTL( nstages=4 )
-model.vcd_file = "regincr-4stage-sim.vcd"
-model = TranslationTool( model )
+model.config_tracing = TracingConfigs(
+  tracing='vcd',
+  vcd_file_name="regincr-sim"
+)
+
 model.elaborate()
-sim = SimulationTool( model )
+
+# ''' SECTION TASK '''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# To translate the model to Verilog you need to add a line here like
+# this:
+#
+#  model.apply( VerilogPlaceholderPass() )
+#  model.sverilog_translate_import = True
+#  model = TranslationImportPass()( model )
+#
+# ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+# Apply the simulation pass to create a simulator
+
+model.apply( SimulationPass() )
 
 # Reset simulator
 
-sim.reset()
+model.sim_reset()
 
 # Apply input values and display output values
 
@@ -33,13 +63,17 @@ for input_value in input_values:
 
   # Write input value to input port
 
-  model.in_.value = input_value
+  model.in_ = b8(input_value)
+
+  # Evaluate combinational logic
+
+  model.eval_combinational()
 
   # Display line trace
 
-  sim.print_line_trace()
+  print( model.line_trace() )
 
   # Tick simulator one cycle
 
-  sim.cycle()
+  model.tick()
 

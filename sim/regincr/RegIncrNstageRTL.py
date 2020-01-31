@@ -14,49 +14,34 @@ rtl_language = 'pymtl'
 
 # This is the PyMTL wrapper for the corresponding Verilog RTL model.
 
-from pymtl import *
+from pymtl3 import *
+from pymtl3.passes.backends.sverilog import VerilogPlaceholderConfigs, TranslationConfigs
 
-class RegIncrNstageVRTL( VerilogModel ):
+class RegIncrNstageVRTL( Component, Placeholder ):
 
   # Constructor
-
-  def __init__( s, nstages=2 ):
-
-    # Verilog module name
-
-    s.explicit_modulename = "RegIncrNstageRTL_{}stage".format(nstages)
+  def construct( s, nstages=2 ):
 
     # Port-based interface
+    s.in_ = InPort  ( Bits8 )
+    s.out = OutPort ( Bits8 )
 
-    s.in_ = InPort  ( Bits(8) )
-    s.out = OutPort ( Bits(8) )
-
-    # Verilog parameters
-
-    s.set_params({
-      'p_nstages' : nstages,
-    })
-
-    # Verilog ports
-
-    s.set_ports({
-      'clk'   : s.clk,
-      'reset' : s.reset,
-      'in'    : s.in_,
-      'out'   : s.out,
-    })
-
-  # Line tracing
-
-  def line_trace( s ):
-    return "{} () {}".format( s.in_, s.out )
+    from os import path
+    s.config_placeholder = VerilogPlaceholderConfigs(
+      # The absolute path of the SVerilog file to be imported
+      src_file = path.dirname(__file__) + '/RegIncrNstageVRTL.v',
+      # What is the name of the top module to be imported?
+      top_module = 'RegIncrNstageVRTL',
+    )
+    s.config_sverilog_translate = TranslationConfigs(
+      explicit_module_name = f'RegIncr{nstages}stageRTL',
+    )
 
 # Import the appropriate version based on the rtl_language variable
 
 if rtl_language == 'pymtl':
-  from RegIncrNstagePRTL import RegIncrNstagePRTL as RegIncrNstageRTL
+  from .RegIncrNstagePRTL import RegIncrNstagePRTL as RegIncrNstageRTL
 elif rtl_language == 'verilog':
   RegIncrNstageRTL = RegIncrNstageVRTL
 else:
   raise Exception("Invalid RTL language!")
-

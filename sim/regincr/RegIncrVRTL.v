@@ -12,30 +12,25 @@ module RegIncrVRTL
 (
   input  logic       clk,
   input  logic       reset,
-  input  logic [7:0] in,
+  input  logic [7:0] in_,
   output logic [7:0] out
 );
 
   // Sequential logic
 
   logic [7:0] reg_out;
+
   always @( posedge clk ) begin
     if ( reset )
       reg_out <= 0;
     else
-      reg_out <= in;
+      reg_out <= in_;
   end
 
-  // Combinational logic
-
-  logic [7:0] temp_wire;
-  always @(*) begin
-    temp_wire = reg_out + 1;
-  end
-
-  // Combinational logic
-
-  assign out = temp_wire;
+  // ''' SECTION TASK ''''''''''''''''''''''''''''''''''''''''''''''''''''
+  // This model is incomplete. As part of the section you will insert a
+  // combinational concurrent block here to model the incrementer logic.
+  // ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 endmodule
 
