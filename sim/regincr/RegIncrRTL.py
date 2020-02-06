@@ -15,7 +15,7 @@ rtl_language = 'pymtl'
 # This is the PyMTL wrapper for the corresponding Verilog RTL model.
 
 from pymtl3 import *
-from pymtl3.passes.backends.sverilog import VerilogPlaceholderConfigs, TranslationConfigs
+from pymtl3.passes.backends.verilog import VerilogPlaceholderConfigs, TranslationConfigs
 
 class RegIncrVRTL( Component, Placeholder ):
 
@@ -31,7 +31,7 @@ class RegIncrVRTL( Component, Placeholder ):
       # The absolute path of the SVerilog file to be imported
       src_file = path.dirname(__file__) + '/RegIncrVRTL.v',
     )
-    s.config_sverilog_translate = TranslationConfigs(
+    s.config_verilog_translate = TranslationConfigs(
       explicit_module_name = 'RegIncrRTL',
     )
 

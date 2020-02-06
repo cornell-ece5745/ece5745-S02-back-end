@@ -191,7 +191,7 @@ simulator for our four-stage registered incrementer like this:
 
     % cd $TOPDIR/sim/build
     % ../regincr/regincr-sim 10 20 30 40
-    % more RegIncr4stageRTL.sv
+    % more RegIncr4stageRTL.v
 
 You should now have the Verilog that we want to push through the ASIC
 flow.
@@ -210,7 +210,7 @@ section:
 
     dc_shell> set_app_var target_library "$env(ECE5745_STDCELLS)/stdcells.db"
     dc_shell> set_app_var link_library   "* $env(ECE5745_STDCELLS)/stdcells.db"
-    dc_shell> analyze -format sverilog ../../sim/build/RegIncr4stageRTL.sv
+    dc_shell> analyze -format sverilog ../../sim/build/RegIncr4stageRTL.v
     dc_shell> elaborate RegIncr4stageRTL
     dc_shell> check_design
     dc_shell> create_clock clk -name ideal_clock1 -period 1

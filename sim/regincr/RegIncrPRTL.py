@@ -6,7 +6,7 @@
 # finally written to the output port.
 
 from pymtl3 import *
-from pymtl3.passes.backends.sverilog import TranslationConfigs
+from pymtl3.passes.backends.verilog import TranslationConfigs
 
 class RegIncrPRTL( Component ):
 
@@ -38,7 +38,7 @@ class RegIncrPRTL( Component ):
 
     # Configuration
 
-    s.config_sverilog_translate = TranslationConfigs(
+    s.config_verilog_translate = TranslationConfigs(
       # Let --test-verilog option control whether we will translate PRTL
       translate = False,
       # What is the module name of the top level in the translated Verilog?

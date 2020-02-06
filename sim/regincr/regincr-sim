@@ -6,9 +6,9 @@
 import os
 import sys
 
-from pymtl3                          import *
-from pymtl3.passes                   import TracingConfigs
-from pymtl3.passes.backends.sverilog import TranslationImportPass, VerilogPlaceholderPass
+from pymtl3                         import *
+from pymtl3.passes                  import TracingConfigs
+from pymtl3.passes.backends.verilog import TranslationImportPass, VerilogPlaceholderPass
 
 # Hack to add project root to python path
 
@@ -40,11 +40,11 @@ model.config_tracing = TracingConfigs(
 model.elaborate()
 
 # ''' SECTION TASK '''''''''''''''''''''''''''''''''''''''''''''''''''''''
-# To translate the model to Verilog you need to add a line here like
+# To translate the model to Verilog you need to add three lines here like
 # this:
 #
 #  model.apply( VerilogPlaceholderPass() )
-#  model.sverilog_translate_import = True
+#  model.verilog_translate_import = True
 #  model = TranslationImportPass()( model )
 #
 # ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
