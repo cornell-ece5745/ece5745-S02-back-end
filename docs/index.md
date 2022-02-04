@@ -2,8 +2,8 @@
 ECE 5745 Section 2: ASIC Flow Back-End
 ==========================================================================
 
- - Author: Christopher Batten & Khalid Al-Hawaj
- - Date: January 31, 2020
+ - Author: Christopher Batten
+ - Date: February 4, 2022
 
 **Table of Contents**
 
@@ -11,7 +11,7 @@ ECE 5745 Section 2: ASIC Flow Back-End
  - NanGate 45nm Standard-Cell Libraries
  - Revisiting the ASIC Flow Front-End
  - Using Cadence Innovus for Place-and-Route
- - Automating the ASIC Flow (mflowgen)
+ - Using Synopsys VCS for Fast-Functional Gate-Level Simulation
 
 Introduction
 --------------------------------------------------------------------------
@@ -20,23 +20,23 @@ In this section, we will be discussing the back-end of the ASIC toolflow.
 More detailed tutorials will be posted on the public course website
 shortly, but this section will at least give you a chance to take a
 gate-level netlist through place-and-route and energy analysis. The
-following diagram illustrates the four primary tools we will be using in
-ECE 5745 along with a few smaller secondary tools. Notice that the
-Synopsys and Cadence ASIC tools all require various views from the
-standard-cell library.
+following diagram illustrates the tool flow we will be using in ECE 5745
+along. Notice that the Synopsys and Cadence ASIC tools all require
+various views from the standard-cell library which part of the ASIC
+design kit (ADK).
 
-![](assets/fig/asic-flow.png)
+![](assets/fig/asic-flow-back-end.png)
 
 The "back-end" of the flow is highlighted in red and refers to Cadence
-Innovus and Synopsys PrimeTime:
+Innovus and Synopsys VCS.
 
  - We use Cadence Innovus to place-and-route our design, which means to
    place all of the gates in the gate-level netlist into rows on the chip
    and then to generate the metal wires that connect all of the gates
    together. We need to provide Cadence Innovus with similar abstract
-   logical and timing views used in Synopsys DC. Cadence Innovus takes
-   as input the `.lib` file which is the ASCII text version of a `.db`
-   file. In addition, we need to provide Cadence Innovus with technology
+   logical and timing views used in Synopsys DC. Cadence Innovus takes as
+   input the `.lib` file which is the ASCII text version of a `.db` file.
+   In addition, we need to provide Cadence Innovus with technology
    information in `.lef` and `.captable` format and abstract physical
    views of the standard-cell library in `.lef` format. Cadence Innovus
    will generate an updated Verilog gate-level netlist, a `.spef` file
@@ -46,35 +46,22 @@ Innovus and Synopsys PrimeTime:
    viewer. Cadence Innovus also generates reports which can be used to
    accurately characterize area and timing.
 
- - We use Synopsys PrimeTime (PT) to perform power-analysis of our
-   design. We need to provide Synopsys PT with the same abstract logical,
-   timing, and power views used in Synopsys DC and ICC, but in addition
-   we need to provide switching activity information for every net in the
-   design (which comes from the `.saif` file), capacitance information
-   for every net in the design (which comes from the `.sbpf` file), and a
-   file which maps high-level RTL names to low-level gate-level names
-   (which comes from the `.namemap` file). Synopsys PT puts the switching
-   activity, capacitance, clock frequency, and voltage together to
-   estimate the power consumption of every net and thus every module in
-   the design, and these estimates are captured in various reports.
+ - We use Synopsys VCS for back-annotated gate-level simulation.
+   Gate-level simulation involves simulating every standard-cell gate and
+   helps verify that the Verilog gate-level netlist is functionally
+   correct. Fast-functional gate-level simulation does not include any
+   timing information, while back-annotated gate-levle simulation does
+   include the estimated delay of every gate and every wire.
 
-In this section, we will be focusing on just using Cadence Innovus to
-place and route our design. Extensive documentation is provided by
-Synopsys and Cadence. We have organized this documentation and made it
-available to you on the [public course
-webpage](http://www.csl.cornell.edu/courses/ece5745/syndocs). The
-username/password was distributed during lecture.
+Extensive documentation is provided by Synopsys and Cadence. We have
+organized this documentation and made it available to you on the [public
+course webpage](http://www.csl.cornell.edu/courses/ece5745/syndocs). The
+username/password is on Canvas.
 
-The first step is to start MobaXterm. From the _Start_ menu, choose
-_MobaXterm Educational Edition > MobaXterm Educational Edition_. Then
-double click on _ecelinux.ece.cornell.edu_ under _Saved sessions_ in
-MobaXterm. Log in using your NetID and password. Click _Yes_ when asked
-if you want to save your password. This will make it easier to open
-multiple terminals if you need to.
-
-Once you are at the `ecelinux` prompt, source the setup script, clone
-this repository from GitHub, and define an environment variable to keep
-track of the top directory for the project.
+The first step is to start access `ecelinux` using X2Go and then open a
+terminal. Once you are at the `ecelinux` prompt, source the setup script,
+clone this repository from GitHub, and define an environment variable to
+keep track of the top directory for the project.
 
     % source setup-ece5745.sh
     % mkdir $HOME/ece5745
@@ -177,21 +164,22 @@ is no sense in running the flow if the design is incorrect!
     % cd $TOPDIR/sim/build
     % py.test ../regincr
 
-Next we should rerun all the tests with the `--test-verilog` command line
-option to ensure that the design also works after translated into
-Verilog. You should do this step even if you are using Verilog for your
-RTL design.
+Next we should rerun all the tests with the `--test-verilog` and
+`--dump-vtb` command line options to ensure that the design also works
+after translated into Verilog and that we generate a Verilog test-bench
+for gate-level simulation. You should do this step even if you are using
+Verilog for your RTL design.
 
     % cd $TOPDIR/sim/build
-    % py.test ../regincr --test-verilog
+    % py.test ../regincr --test-verilog --dump-vtb
 
 The tests are for verification. When we push a design through the flow we
 want to use a simulator which is focused on evaluation. You can run the
 simulator for our four-stage registered incrementer like this:
 
     % cd $TOPDIR/sim/build
-    % ../regincr/regincr-sim 10 20 30 40
-    % more RegIncr4stageRTL.v
+    % ../regincr/regincr-sim 0x10 0x20 0x30 0x40
+    % less RegIncr4stageRTL__pickled.v
 
 You should now have the Verilog that we want to push through the ASIC
 flow.
@@ -201,16 +189,15 @@ flow.
 We start by creating a subdirectory for our work, and then launching
 Synopsys DC.
 
-    % mkdir -p $TOPDIR/asic-manual/synopsys-dc
-    % cd $TOPDIR/asic-manual/synopsys-dc
+    % mkdir -p $TOPDIR/asic/synopsys-dc-synth
+    % cd $TOPDIR/asic/synopsys-dc-synth
     % dc_shell-xg-t
 
-Enter the following commands which were explained in the last discussion
-section:
+We used the following commands in the last discussion section:
 
     dc_shell> set_app_var target_library "$env(ECE5745_STDCELLS)/stdcells.db"
     dc_shell> set_app_var link_library   "* $env(ECE5745_STDCELLS)/stdcells.db"
-    dc_shell> analyze -format sverilog ../../sim/build/RegIncr4stageRTL.v
+    dc_shell> analyze -format sverilog ../../sim/build/RegIncr4stageRTL__pickled.v
     dc_shell> elaborate RegIncr4stageRTL
     dc_shell> check_design
     dc_shell> create_clock clk -name ideal_clock1 -period 1
@@ -218,6 +205,12 @@ section:
     dc_shell> write -format verilog -hierarchy -output post-synth.v
     dc_shell> write -format ddc     -hierarchy -output post-synth.ddc
     dc_shell> exit
+
+To simplify this process, we have provided you a TCL file that includes
+these commands. You can run this TCL script using Synopsys DC like this:
+
+    % cd $TOPDIR/asic/synopsys-dc-synth
+    % dc_shell-xg-t -f init.tcl
 
 Take a few minutes to examine the resulting Verilog gate-level netlist.
 Notice that the module hierarchy is preserved.
@@ -232,8 +225,8 @@ Using Cadence Innovus for Place-and-Route
 We will be running Cadence Innovus in a separate directory to keep the
 input and output files separate.
 
-    % mkdir -p $TOPDIR/asic-manual/cadence-innovus
-    % cd $TOPDIR/asic-manual/cadence-innovus
+    % mkdir -p $TOPDIR/asic/cadence-innovus-pnr
+    % cd $TOPDIR/asic/cadence-innovus-pnr
 
 Before starting Cadence Innovus, we need to create two files which will
 be loaded into the tool. The first file is a `.sdc` file which contains
@@ -242,7 +235,7 @@ specify our target clock period, but it is also where we could specify
 input or output delay constraints (e.g., the output signals must be
 stable 200ps before the rising edge). Use Geany or your favorite text
 editor to create a file named `constraints.sdc` in
-`$TOPDIR/asic-manual/cadence-innovus` with the following content:
+`$TOPDIR/asic/cadence-innovus-pnr` with the following content:
 
     create_clock clk -name ideal_clock -period 1
 
@@ -263,7 +256,7 @@ conditions, we need to evaluate our design across a range of corners. In
 this course, we will keep things simple by only considering a "typical"
 corner (i.e., average PVT). Use Geany or your favorite text editor to
 create a file named `setup-timing.tcl` in
-`$TOPDIR/asic-manual/cadence-innovus` with the following content:
+`$TOPDIR/asic/cadence-innovus-pnr` with the following content:
 
     create_rc_corner -name typical \
        -cap_table "$env(ECE5745_STDCELLS)/rtk-typical.captable" \
@@ -321,7 +314,7 @@ module in our design, the location of the `.lef` files, and finally the
 names of the power and ground nets.
 
     innovus> set init_mmmc_file "setup-timing.tcl"
-    innovus> set init_verilog   "../synopsys-dc/post-synth.v"
+    innovus> set init_verilog   "../synopsys-dc-synth/post-synth.v"
     innovus> set init_top_cell  "RegIncr4stageRTL"
     innovus> set init_lef_file  "$env(ECE5745_STDCELLS)/rtk-tech.lef $env(ECE5745_STDCELLS)/stdcells.lef"
     innovus> set init_gnd_net   "VSS"
@@ -444,20 +437,21 @@ Now we can generate various artifacts. We might want to save the final
 gate-level netlist for the chip since Cadence Innovus will often insert
 new cells or change cells during its optimization passes.
 
-    innovus> saveNetlist post-par.v
+    innovus> saveNetlist post-pnr.v
 
-We can also extract resistance and capacitance for the metal
-interconnect and write this to a special `.spef` file. This file can be
-used for later timing and/or power analysis.
+We can also extract resistance and capacitance for the metal interconnect
+and write this to a special `.spef` file and `.sdf` file. These files can
+be used for later timing and/or power analysis.
 
     innovus> extractRC
     innovus> rcOut -rc_corner typical -spef typical.spef
+    innovus> write_sdf post-pnr.sdf -interconn all -setuphold split
 
 And of course the step is to generate the real layout as a `.gds` file.
 This is what we will send to the foundry when we are ready to tapeout the
 chip.
 
-    innovus> streamOut post-par.gds \
+    innovus> streamOut post-pnr.gds \
                -merge "$env(ECE5745_STDCELLS)/stdcells.gds" \
                -mapFile "$env(ECE5745_STDCELLS)/rtk-stream-out.map"
 
@@ -476,96 +470,77 @@ Finally, we go ahead and exit Cadence Innovus.
 
 If you want you can open up the final layout using Klayout.
 
-    % klayout -l $ECE5745_STDCELLS/klayout.lyp post-par.gds
+    % klayout -l $ECE5745_STDCELLS/klayout.lyp post-pnr.gds
 
 Choose _Display > Full Hierarchy_ from the menu to display the entire
 design. Zoom in and out to see the individual transistors as well as the
 entire chip.
 
-Automating the ASIC Flow
+Using Synopsys VCS for Fast-Functional Gate-Level Simulation
 --------------------------------------------------------------------------
 
-Our approach so far has enabled us to see the key tools used for the ASIC
-flow front- and back-end, but we have been entering commands manually for
-each tool. This is obviously very tedious and error prone. An agile
-hardware design flow demands automation to simplify rapidly exploring the
-area, energy, timing design space of one or more designs. Luckily,
-Synopsys and Cadence tools can be easily scripted using TCL, and even
-better, the ECE 5745 staff have already created these TCL scripts along
-with a set of Makefiles to run thee TCL scripts.
+As we learned in the last discussion section, good ASIC designers are
+always paranoid and _never_ trust their tools. How do we know that the
+final post-place-and-route gate-level netlist is correct? Once again, we
+can rerun our test suite on the gate-level model. We can do this using
+Synopsys VCS for back-annotated gatel-level simulation. _Back-annotated_
+refers to the fact that this simulation will take into account all of the
+gate and interconnect delays. So this also helps build our confidence not
+just that the final gate-level netlist is functionally correct, but also
+that it meets all setup and hold time constraints. Here is how to run VCS
+for RTL simulation:
 
-The automated flow is located in the `mflowgen` subdirectory of this repo.
-Take a look at the `designs` subdirectory. In the subdirectory, you should
-see a directory already created for `RegIncr`, which holds all the
-configuration required to derive the flow. Take the time to inspect the
-file `construct.py`, which describes the desired flow to be ran.
-As an input, the flow expects the file `design.v` to be placed inside
-`rtl/outputs`. You can execute the following commands to inspect the
-structure of the directory:
+    % cd $TOPDIR/asic/synopsys-vcs-bagl-sim
+    % vcs -full64 -sverilog +lint=all -xprop=tmerge -override_timescale=1ns/1ps \
+        +define+CYCLE_TIME=1.0 \
+        +define+VTB_INPUT_DELAY=0.1 \
+        +define+VTB_OUTPUT_ASSERT_DELAY=0.99 \
+        +neg_tchk +sdfverbose \
+        -sdf max:RegIncr4stageRTL_tb.DUT:../cadence-innovus-pnr/post-pnr.sdf \
+        +incdir+../../sim/build \
+        +vcs+dumpvars+vcs-bagl-sim.vcd \
+        -top RegIncr4stageRTL_tb \
+        ../cadence-innovus-pnr/post-pnr.v \
+        $ECE5745_STDCELLS/stdcells.v \
+        ../../sim/build/RegIncr4stageRTL_test_4stage_random_tb.v
 
-    % cd mflowgen/designs/RegIncr
-    % tree ./
+This is a pretty long command line! So we provide you a shell script that
+has the command ready for you to use.
 
-Inside the `construct.py` file, there are a lot of information, but the
-important configuration is placed at the top of the file:
+    % cd $TOPDIR/asic/synopsys-vcs-bagl-sim
+    % source run-1ns.sh
 
-    #-----------------------------------------------------------------------
-    # Parameters
-    #-----------------------------------------------------------------------
+You should see a `simv` binary which is the compiled RTL simulator which
+you can run like this:
 
-    adk_name = 'freepdk-45nm'
-    adk_view = 'view-standard'
+    % cd $TOPDIR/asic/synopsys-vcs-bagl-sim
+    % ./simv
 
-    parameters = {
-      'construct_path' : __file__,
-      'design_name'    : 'RegIncr4stageRTL',
-      'clock_period'   : 2.0,
-      'adk'            : adk_name,
-      'adk_view'       : adk_view,
-      'topographical'  : True,
-    }
+It should pass the test. Now let's look at the resulting waveforms.
 
-The `adk_name` specifies the targeted technology node and fabrication
-process. The `design_name` is the name of the corresponding top-level
-module. The `clock_period` is the target clock period we want to use for
-synthesis and place-and-route.
+    % cd $TOPDIR/asic/synopsys-vcs-bagl-sim
+    % gtkwave vcs-bagl-sim.vcd
 
-To get started create a build directory and run the configure script. You
-need to explicitly specify which design you want to push through the flow
-when you run the configure script.
+Browse the signal hierarchy and display all the waveforms for the DUT
+using these steps:
 
-    % cd $TOPDIR/mflowgen
-    % mkdir build
-    % cd build
-    % ../configure --design ../designs/RegIncr
-    % make list
+ - Expand out the signal tree until you find the _DUT_ module
+ - Select the _clk, in, out_ signals
+ - Click _Append_
 
-The `list` Makefile target will display the various targets that you can
-use to manage the flow. The following two commands will perform synthesis
-and then place-and-route.
+Zoom in and notice how the signals now change throughout the cycle. This
+is because the delay of every gate and wire is now modeled. Let's rerun
+the simulation, but this time let's use a very fast clock frequency (much
+faster than the 1ns clock constraint we used during synthesis and
+place-and-route).
 
-    % cd $TOPDIR/asic/build
-    % make synopsys-dc-synthesis
-    % make cadence-innovus-place-route
+    % cd $TOPDIR/asic/synopsys-vcs-bagl-sim
+    % source run-200ps.sh
 
-It will take 4-5 minutes to push the design through the flow. The
-automated flow takes longer than the manual steps we used above because
-the automated flow is using a much more sophisticated approach with many
-more optimization steps. Be aware that for larger designs it can take
-quite a while to push a design through the entire flow. Consider using
-just the ASIC flow front-end to ensure your design is synthesizable and
-to gain some rough early intuition on area and timing. Then you can
-iterate quickly and eventually focus on the ASIC flow back-end.
+You should see several setup time violations and the test will fail. If
+you look at the resulting waveforms you can see that some of the outputs
+are turning to Xs becuase of these violations
 
-You can use the `debug-` targets to view the final design in Cadence
-Innovus.
+    % cd $TOPDIR/asic/synopsys-vcs-bagl-sim
+    % gtkwave vcs-bagl-sim.vcd
 
-    % make debug-cadence-innovus-place-route
-
-*To Do On Your Own:* Modify the `construct.py` file to target a much
-more aggressive clock period of only 300ps. Use the automated ASIC flow
-to push the four-stage registered incrementer through the flow again.
-Then use `debug-cadence-innovus-place-route` to bring the final deisgn
-up in Cadence Innovus. Explore the design to see how the tool has placed
-and routed the more complex incrementers. Use the `report_timing` and
-`report_area` commands to look at the critical path and area.
