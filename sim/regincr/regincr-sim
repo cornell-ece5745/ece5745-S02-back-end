@@ -6,9 +6,8 @@
 import os
 import sys
 
-from pymtl3                         import *
-from pymtl3.passes                  import TracingConfigs
-from pymtl3.passes.backends.verilog import TranslationImportPass, VerilogPlaceholderPass
+from pymtl3 import *
+from pymtl3.passes.backends.verilog import *
 
 # Hack to add project root to python path
 
@@ -25,33 +24,24 @@ from regincr.RegIncrNstageRTL import RegIncrNstageRTL
 
 input_values = [ int(x,0) for x in sys.argv[1:] ]
 
-# Add three zero values to end of list of input values
+# Add some zero values to end of list of input values
 
-input_values.extend( [0, 0, 0] )
+input_values.extend( [0]*5 )
 
 # Instantiate a 4-stage registered incrementer
 
 model = RegIncrNstageRTL( nstages=4 )
-model.config_tracing = TracingConfigs(
-  tracing='vcd',
-  vcd_file_name="regincr-sim"
-)
-
 model.elaborate()
 
-# ''' SECTION TASK '''''''''''''''''''''''''''''''''''''''''''''''''''''''
-# To translate the model to Verilog you need to add three lines here like
-# this:
-#
-#  model.apply( VerilogPlaceholderPass() )
-#  model.verilog_translate_import = True
-#  model = TranslationImportPass()( model )
-#
-# ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+# Mark the top-level component for translation
 
-# Apply the simulation pass to create a simulator
+model.set_metadata( VerilogTranslationImportPass.enable, True )
 
-model.apply( SimulationPass() )
+# Apply the default pass group
+
+model.apply( VerilogPlaceholderPass() )
+model = VerilogTranslationImportPass()( model )
+model.apply( DefaultPassGroup(textwave=True) )
 
 # Reset simulator
 
@@ -63,17 +53,17 @@ for input_value in input_values:
 
   # Write input value to input port
 
-  model.in_ = b8(input_value)
+  model.in_ @= input_value
 
   # Evaluate combinational logic
 
-  model.eval_combinational()
-
-  # Display line trace
-
-  print( model.line_trace() )
+  model.sim_eval_combinational()
 
   # Tick simulator one cycle
 
-  model.tick()
+  model.sim_tick()
+
+# Display text waveform
+
+model.print_textwave()
 

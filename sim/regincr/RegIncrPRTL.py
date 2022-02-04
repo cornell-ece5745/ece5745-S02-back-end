@@ -6,13 +6,18 @@
 # finally written to the output port.
 
 from pymtl3 import *
-from pymtl3.passes.backends.verilog import TranslationConfigs
+from pymtl3.passes.backends.verilog import *
 
 class RegIncrPRTL( Component ):
 
   # Constructor
 
   def construct( s ):
+
+    # If translated into Verilog, we use the explicit name
+
+    s.set_metadata( VerilogTranslationPass.explicit_module_name,
+                    'RegIncrRTL' )
 
     # Port-based interface
 
@@ -21,30 +26,26 @@ class RegIncrPRTL( Component ):
 
     # Sequential logic
 
-    s.reg_out = Wire( Bits8 )
+    s.reg_out = Wire( 8 )
 
-    @s.update_ff
+    @update_ff
     def block1():
       if s.reset:
-        s.reg_out <<= b8(0)
+        s.reg_out <<= 0
       else:
         s.reg_out <<= s.in_
 
     # Combinational logic
 
-    @s.update
+    s.temp_wire = Wire( 8 )
+
+    @update
     def block2():
-      s.out = s.reg_out + b8(1)
+      s.temp_wire @= s.reg_out + 1
 
-    # Configuration
+    s.out //= s.temp_wire
 
-    s.config_verilog_translate = TranslationConfigs(
-      # Let --test-verilog option control whether we will translate PRTL
-      translate = False,
-      # What is the module name of the top level in the translated Verilog?
-      explicit_module_name = 'RegIncrRTL',
-    )
+  # Line tracing
 
   def line_trace( s ):
     return f"{s.in_} ({s.reg_out}) {s.out}"
-

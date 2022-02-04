@@ -30,6 +30,7 @@ module RegIncrVRTL
   // Combinational logic
 
   logic [7:0] temp_wire;
+
   always @(*) begin
     temp_wire = reg_out + 1;
   end
@@ -39,4 +40,3 @@ module RegIncrVRTL
 endmodule
 
 `endif /* REG_INCR_V */
-

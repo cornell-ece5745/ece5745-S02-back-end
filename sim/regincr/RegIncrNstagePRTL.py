@@ -3,8 +3,8 @@
 #=========================================================================
 # Registered incrementer that is parameterized by the number of stages.
 
-from pymtl3      import *
-from pymtl3.passes.backends.verilog import TranslationConfigs
+from pymtl3 import *
+from pymtl3.passes.backends.verilog import *
 from .RegIncrRTL import RegIncrRTL
 
 class RegIncrNstagePRTL( Component ):
@@ -12,6 +12,11 @@ class RegIncrNstagePRTL( Component ):
   # Constructor
 
   def construct( s, nstages=2 ):
+
+    # If translated into Verilog, we use the explicit name
+
+    s.set_metadata( VerilogTranslationPass.explicit_module_name,
+                    f"RegIncr{nstages}stageRTL" )
 
     # Port-based interface
 
@@ -34,15 +39,6 @@ class RegIncrNstagePRTL( Component ):
     # Connect last reg_incr in chain to output port
 
     connect( s.reg_incrs[-1].out, s.out )
-
-    # Configurations
-
-    s.config_verilog_translate = TranslationConfigs(
-      # Let --test-verilog option control whether we will translate PRTL
-      translate = False,
-      # What is the module name of the top level in the translated Verilog?
-      explicit_module_name = f'RegIncr{nstages}stageRTL',
-    )
 
   # Line tracing
 
