@@ -9,7 +9,7 @@ from random import sample
 
 from pymtl3                   import *
 from pymtl3.stdlib.test_utils import run_test_vector_sim, mk_test_case_table
-from .RegIncrNstageRTL        import RegIncrNstageRTL
+from ..RegIncrNstageRTL       import RegIncrNstageRTL
 
 #-------------------------------------------------------------------------
 # mk_test_vector_table

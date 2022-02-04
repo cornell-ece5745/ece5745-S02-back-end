@@ -4,7 +4,7 @@
 
 from pymtl3                   import *
 from pymtl3.stdlib.test_utils import run_test_vector_sim
-from .RegIncrRTL              import RegIncrRTL
+from ..RegIncrRTL             import RegIncrRTL
 
 #-------------------------------------------------------------------------
 # test_small
