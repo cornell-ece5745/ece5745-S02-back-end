@@ -388,10 +388,10 @@ with preliminary routing to connect all of the standard cells together.
 You can toggle the visibility of metal layers by pressing the number keys
 on the keyboard. So try toggling the visibility of M1, M2, M3, etc. You
 can visualize how the modules in the original Verilog mapped to the
-place-and-routed design by using the Design Browser. Choose the _Windows
-> Workspaces > Design Browser + Physical_ menu option. Then use the
-_Design Browser_ to click on specific modules or nets to highlight them
-in the physical view.
+place-and-routed design by using the Design Browser. Choose the
+_Windows > Workspaces > Design Browser + Physical_ menu option.
+Then use the _Design Browser_ to click on specific modules or nets to
+highlight them in the physical view.
 
 The `place_design` command will perform a very preliminary route to help
 ensure a good placement, but we will now do a more detailed routing pass
