@@ -1,1 +1,0 @@
-../../cadence-innovus-power/scripts/power-strategy-singlemesh.tcl

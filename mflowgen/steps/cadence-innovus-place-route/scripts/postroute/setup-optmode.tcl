@@ -1,1 +1,0 @@
-../../../cadence-innovus-postroute/scripts/setup-optmode.tcl

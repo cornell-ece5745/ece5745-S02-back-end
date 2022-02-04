@@ -1,1 +1,0 @@
-../../../cadence-innovus-signoff/scripts/generate-results.tcl

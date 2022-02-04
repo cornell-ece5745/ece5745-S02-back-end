@@ -1,1 +1,0 @@
-../../../cadence-innovus-place/scripts/setup-cellpad.tcl

@@ -1,1 +1,0 @@
-../../../cadence-innovus-cts/scripts/setup-ccopt.tcl

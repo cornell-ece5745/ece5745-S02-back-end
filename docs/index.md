@@ -64,7 +64,7 @@ clone this repository from GitHub, and define an environment variable to
 keep track of the top directory for the project.
 
     % source setup-ece5745.sh
-    % mkdir $HOME/ece5745
+    % mkdir -p $HOME/ece5745
     % cd $HOME/ece5745
     % git clone https://github.com/cornell-ece5745/ece5745-S02-back-end
     % cd ece5745-S02-back-end
@@ -160,7 +160,7 @@ using Synopsys DC.
 Always run the tests before pushing anything through the ASIC flow. There
 is no sense in running the flow if the design is incorrect!
 
-    % mkdir $TOPDIR/sim/build
+    % mkdir -p $TOPDIR/sim/build
     % cd $TOPDIR/sim/build
     % py.test ../regincr
 

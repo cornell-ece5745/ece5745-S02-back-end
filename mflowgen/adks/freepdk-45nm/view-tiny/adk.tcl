@@ -1,1 +1,0 @@
-../pkgs/base/adk.tcl
