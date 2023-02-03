@@ -1,14 +1,16 @@
 //========================================================================
-// RegIncrVRTL
+// Registered Incrementer
 //========================================================================
 // This is a simple example of a module for a registered incrementer
 // which combines a positive edge triggered register with a combinational
-// +1 incrementer. We use flat register-transfer-level modeling.
+// +2 incrementer. We use flat register-transfer-level modeling.
 
-`ifndef REG_INCR_V
-`define REG_INCR_V
+`ifndef TUT3_VERILOG_REGINCR_REG_INCR_V
+`define TUT3_VERILOG_REGINCR_REG_INCR_V
 
-module RegIncrVRTL
+`include "vc/trace.v"
+
+module tut3_verilog_regincr_RegIncr
 (
   input  logic       clk,
   input  logic       reset,
@@ -19,7 +21,6 @@ module RegIncrVRTL
   // Sequential logic
 
   logic [7:0] reg_out;
-
   always @( posedge clk ) begin
     if ( reset )
       reg_out <= 0;
@@ -37,6 +38,18 @@ module RegIncrVRTL
 
   assign out = temp_wire;
 
+  `ifndef SYNTHESIS
+
+  logic [`VC_TRACE_NBITS-1:0] str;
+  `VC_TRACE_BEGIN
+  begin
+    $sformat( str, "%x (%x) %x", in_, reg_out, out );
+    vc_trace.append_str( trace_str, str );
+  end
+  `VC_TRACE_END
+
+  `endif /* SYNTHESIS */
+
 endmodule
 
-`endif /* REG_INCR_V */
+`endif /* TUT3_VERILOG_REGINCR_REG_INCR_V */

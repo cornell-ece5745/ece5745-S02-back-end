@@ -18,7 +18,7 @@ while sim_dir:
     break
   sim_dir = os.path.dirname(sim_dir)
 
-from regincr.RegIncrNstageRTL import RegIncrNstageRTL
+from tut3_verilog.regincr.RegIncrNstage import RegIncrNstage
 
 # Get list of input values from command line
 
@@ -30,7 +30,7 @@ input_values.extend( [0]*5 )
 
 # Instantiate a 4-stage registered incrementer
 
-model = RegIncrNstageRTL( nstages=4 )
+model = RegIncrNstage( p_nstages=4 )
 model.elaborate()
 
 # Mark the top-level component for translation
