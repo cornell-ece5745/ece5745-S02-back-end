@@ -11,7 +11,7 @@ ECE 5745 Section 2: ASIC Flow Back-End
  - NanGate 45nm Standard-Cell Libraries
  - Revisiting the ASIC Flow Front-End
  - Using Cadence Innovus for Place-and-Route
- - Using Synopsys VCS for Fast-Functional Gate-Level Simulation
+ - Using Synopsys VCS for Back-Annotated Gate-Level Simulation
 
 Introduction
 --------------------------------------------------------------------------
@@ -54,20 +54,24 @@ Innovus and Synopsys VCS.
    include the estimated delay of every gate and every wire.
 
 Extensive documentation is provided by Synopsys and Cadence. We have
-organized this documentation and made it available to you on the [public
-course webpage](http://www.csl.cornell.edu/courses/ece5745/syndocs). The
-username/password is on Canvas.
+organized this documentation and made it available to you on the Canavas
+course page:
 
-The first step is to start access `ecelinux` using X2Go and then open a
-terminal. Once you are at the `ecelinux` prompt, source the setup script,
-clone this repository from GitHub, and define an environment variable to
-keep track of the top directory for the project.
+ - <https://www.csl.cornell.edu/courses/ece5745/asicdocs>
+
+The first step is to start access `ecelinux`. You can use VS Code for
+working at the command line, but you will also need to a remote access
+option that supports Lunix applications with a GUI such as X2Go,
+MobaXterm, or Mac Terminal with XQuartz. Once you are at the `ecelinux`
+prompt, source the setup script, clone this repository from GitHub, and
+define an environment variable to keep track of the top directory for the
+project.
 
     % source setup-ece5745.sh
     % mkdir -p $HOME/ece5745
     % cd $HOME/ece5745
-    % git clone https://github.com/cornell-ece5745/ece5745-S02-back-end
-    % cd ece5745-S02-back-end
+    % git clone git@github.com:cornell-ece5745/ece5745-S02-back-end sec2
+    % cd sec2
     % TOPDIR=$PWD
 
 NanGate 45nm Standard-Cell Libraries
@@ -152,8 +156,7 @@ registered incrementer as our example design:
 
 Before we can place and route a gate-level netlist, we need to synthesize
 that netlist. This is what we learned about in the last section. Here are
-the steps to generate the Verilog using PyMTL and synthesize the design
-using Synopsys DC.
+the steps to test and then synthesize the design using Synopsys DC.
 
 ### Test, Simulate, and Translate the Four-Stage Registered Incrementer
 
@@ -162,7 +165,7 @@ is no sense in running the flow if the design is incorrect!
 
     % mkdir -p $TOPDIR/sim/build
     % cd $TOPDIR/sim/build
-    % py.test ../regincr
+    % pytest ../tut3_verilog/regincr
 
 Next we should rerun all the tests with the `--test-verilog` and
 `--dump-vtb` command line options to ensure that the design also works
@@ -171,15 +174,15 @@ for gate-level simulation. You should do this step even if you are using
 Verilog for your RTL design.
 
     % cd $TOPDIR/sim/build
-    % py.test ../regincr --test-verilog --dump-vtb
+    % pytest ../tut3_verilog/regincr --test-verilog --dump-vtb
 
 The tests are for verification. When we push a design through the flow we
 want to use a simulator which is focused on evaluation. You can run the
 simulator for our four-stage registered incrementer like this:
 
     % cd $TOPDIR/sim/build
-    % ../regincr/regincr-sim 0x10 0x20 0x30 0x40
-    % less RegIncr4stageRTL__pickled.v
+    % ../tut3_verilog/regincr/regincr-sim 0x10 0x20 0x30 0x40
+    % less RegIncrNstage__p_nstages_4__pickled.v
 
 You should now have the Verilog that we want to push through the ASIC
 flow.
@@ -197,8 +200,8 @@ We used the following commands in the last discussion section:
 
     dc_shell> set_app_var target_library "$env(ECE5745_STDCELLS)/stdcells.db"
     dc_shell> set_app_var link_library   "* $env(ECE5745_STDCELLS)/stdcells.db"
-    dc_shell> analyze -format sverilog ../../sim/build/RegIncr4stageRTL__pickled.v
-    dc_shell> elaborate RegIncr4stageRTL
+    dc_shell> analyze -format sverilog ../../sim/build/RegIncrNstage__p_nstages_4__pickled.v
+    dc_shell> elaborate RegIncrNstage__p_nstages_4
     dc_shell> check_design
     dc_shell> create_clock clk -name ideal_clock1 -period 1
     dc_shell> compile
@@ -210,7 +213,7 @@ To simplify this process, we have provided you a TCL file that includes
 these commands. You can run this TCL script using Synopsys DC like this:
 
     % cd $TOPDIR/asic/synopsys-dc-synth
-    % dc_shell-xg-t -f init.tcl
+    % dc_shell-xg-t -f run.tcl
 
 Take a few minutes to examine the resulting Verilog gate-level netlist.
 Notice that the module hierarchy is preserved.
@@ -233,8 +236,8 @@ be loaded into the tool. The first file is a `.sdc` file which contains
 timing constraint information about our design. This file is where we
 specify our target clock period, but it is also where we could specify
 input or output delay constraints (e.g., the output signals must be
-stable 200ps before the rising edge). Use Geany or your favorite text
-editor to create a file named `constraints.sdc` in
+stable 200ps before the rising edge). Use your favorite text editor to
+create a file named `constraints.sdc` in
 `$TOPDIR/asic/cadence-innovus-pnr` with the following content:
 
     create_clock clk -name ideal_clock -period 1
@@ -315,7 +318,7 @@ names of the power and ground nets.
 
     innovus> set init_mmmc_file "setup-timing.tcl"
     innovus> set init_verilog   "../synopsys-dc-synth/post-synth.v"
-    innovus> set init_top_cell  "RegIncr4stageRTL"
+    innovus> set init_top_cell  "RegIncrNstage__p_nstages_4"
     innovus> set init_lef_file  "$env(ECE5745_STDCELLS)/rtk-tech.lef $env(ECE5745_STDCELLS)/stdcells.lef"
     innovus> set init_gnd_net   "VSS"
     innovus> set init_pwr_net   "VDD"
@@ -476,7 +479,7 @@ Choose _Display > Full Hierarchy_ from the menu to display the entire
 design. Zoom in and out to see the individual transistors as well as the
 entire chip.
 
-Using Synopsys VCS for Fast-Functional Gate-Level Simulation
+Using Synopsys VCS for Back-Annotated Gate-Level Simulation
 --------------------------------------------------------------------------
 
 As we learned in the last discussion section, good ASIC designers are
@@ -492,17 +495,17 @@ for RTL simulation:
 
     % cd $TOPDIR/asic/synopsys-vcs-bagl-sim
     % vcs -full64 -sverilog +lint=all -xprop=tmerge -override_timescale=1ns/1ps \
+        +incdir+../../sim/build \
+        +vcs+dumpvars+vcs-bagl-sim.vcd \
+        -top RegIncrNstage__p_nstages_4_tb \
         +define+CYCLE_TIME=1.0 \
         +define+VTB_INPUT_DELAY=0.1 \
         +define+VTB_OUTPUT_ASSERT_DELAY=0.99 \
         +neg_tchk +sdfverbose \
-        -sdf max:RegIncr4stageRTL_tb.DUT:../cadence-innovus-pnr/post-pnr.sdf \
-        +incdir+../../sim/build \
-        +vcs+dumpvars+vcs-bagl-sim.vcd \
-        -top RegIncr4stageRTL_tb \
+        -sdf max:RegIncrNstage__p_nstages_4_tb.DUT:../cadence-innovus-pnr/post-pnr.sdf \
         ../cadence-innovus-pnr/post-pnr.v \
         $ECE5745_STDCELLS/stdcells.v \
-        ../../sim/build/RegIncr4stageRTL_test_4stage_random_tb.v
+        ../../sim/build/RegIncrNstage__p_nstages_4_test_random_4_tb.v
 
 This is a pretty long command line! So we provide you a shell script that
 has the command ready for you to use.
