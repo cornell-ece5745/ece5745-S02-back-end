@@ -493,6 +493,7 @@ just that the final gate-level netlist is functionally correct, but also
 that it meets all setup and hold time constraints. Here is how to run VCS
 for RTL simulation:
 
+    % mkdir -p $TOPDIR/asic/synopsys-vcs-bagl-sim
     % cd $TOPDIR/asic/synopsys-vcs-bagl-sim
     % vcs -full64 -sverilog +lint=all -xprop=tmerge -override_timescale=1ns/1ps \
         +incdir+../../sim/build \
