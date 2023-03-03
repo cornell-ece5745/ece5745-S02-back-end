@@ -59,7 +59,7 @@ course page:
 
  - <https://www.csl.cornell.edu/courses/ece5745/asicdocs>
 
-The first step is to start access `ecelinux`. You can use VS Code for
+The first step is to access `ecelinux`. You can use VS Code for
 working at the command line, but you will also need to a remote access
 option that supports Linux applications with a GUI such as X2Go,
 MobaXterm, or Mac Terminal with XQuartz. Once you are at the `ecelinux`
